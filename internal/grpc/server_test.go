@@ -696,7 +696,7 @@ func TestServer_ConcurrentAccess(t *testing.T) {
 	// Test concurrent worker registrations
 	t.Run("concurrent worker registrations", func(t *testing.T) {
 		ctx := context.Background()
-		
+
 		wg.Add(numWorkers)
 
 		for i := 0; i < numWorkers; i++ {

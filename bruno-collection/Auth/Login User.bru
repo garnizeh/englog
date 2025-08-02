@@ -19,9 +19,11 @@ body:json {
 
 script:post-response {
   if (res.status === 200) {
-    bru.setEnvVar("user_id", res.body.user.id)
-    bru.setEnvVar("access_token", res.body.tokens.access_token);
-    bru.setEnvVar("refresh_token", res.body.tokens.refresh_token);
+    bru.setVar("user_id", res.body.user.id)
+    bru.setVar("access_token", res.body.tokens.access_token);
+    bru.setVar("refresh_token", res.body.tokens.refresh_token);
+    console.log(`Login successful for user: ${res.body.user.email}`);
+    console.log(`New session created automatically`);
   }
 }
 

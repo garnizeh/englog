@@ -1,0 +1,76 @@
+meta {
+  name: Get Active Sessions
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{base_url}}/v1/auth/sessions
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+headers {
+  Content-Type: application/json
+  User-Agent: Bruno/1.0
+}
+
+assert {
+  res.status: eq 200
+  res.body.sessions: isDefined
+  res.body.count: gte 0
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log(`Active sessions: ${res.body.count}`);
+
+    if (res.body.sessions && res.body.sessions.length > 0) {
+      console.log(`First session ID: ${res.body.sessions[0].id}`);
+      console.log(`First session device: ${res.body.sessions[0].user_agent}`);
+      console.log(`First session last activity: ${res.body.sessions[0].last_activity}`);
+    }
+  }
+}
+
+docs {
+  # Get Active Sessions
+
+  This endpoint retrieves all active sessions for the authenticated user.
+
+  ## Response Format
+
+  ```json
+  {
+    "sessions": [
+      {
+        "id": "uuid",
+        "user_id": "uuid",
+        "user_agent": "string",
+        "ip_address": "string",
+        "created_at": "timestamp",
+        "last_activity": "timestamp",
+        "is_active": true
+      }
+    ],
+    "count": 1
+  }
+  ```
+
+  ## Use Cases
+
+  - View all active sessions across devices
+  - Monitor session activity for security
+  - Identify suspicious login activity
+  - Prepare for logout from specific devices
+
+  ## Security Notes
+
+  - Only returns sessions for the authenticated user
+  - Shows real-time session status
+  - Includes device and location information for security monitoring
+}

@@ -317,6 +317,8 @@ func (q *Queries) GetUserSession(ctx context.Context, id uuid.UUID) (UserSession
 const getUserSessionByToken = `-- name: GetUserSessionByToken :one
 SELECT id, user_id, session_token_hash, refresh_token_hash, expires_at, last_activity, ip_address, user_agent, is_active, created_at FROM user_sessions
 WHERE session_token_hash = $1 AND is_active = true
+ORDER BY created_at DESC
+LIMIT 1
 `
 
 func (q *Queries) GetUserSessionByToken(ctx context.Context, sessionTokenHash string) (UserSession, error) {

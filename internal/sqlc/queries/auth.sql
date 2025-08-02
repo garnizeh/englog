@@ -34,7 +34,9 @@ WHERE id = $1 AND is_active = true;
 
 -- name: GetUserSessionByToken :one
 SELECT * FROM user_sessions
-WHERE session_token_hash = $1 AND is_active = true;
+WHERE session_token_hash = $1 AND is_active = true
+ORDER BY created_at DESC
+LIMIT 1;
 
 -- name: UpdateSessionActivity :exec
 UPDATE user_sessions

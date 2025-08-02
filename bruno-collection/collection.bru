@@ -1,6 +1,48 @@
 vars:pre-request {
   base_url: http://localhost:8080
-  access_token: 
-  refresh_token: 
-  user_id: 
+  access_token:
+  refresh_token:
+  user_id:
+  task_id:
+  skill_task_id:
+  time_management_task_id:
+  collaboration_task_id:
+  mixed_context_task_id:
+  report_task_id:
+}
+
+docs {
+  # EngLog API - Bruno Collection
+
+  Complete API testing collection for the EngLog engineering activity tracking system.
+
+  ## 🔐 Session Management Features
+
+  This collection now includes comprehensive session management:
+  - **Automatic session creation** on register/login
+  - **Session activity tracking** on all protected endpoints
+  - **Multi-device session monitoring** via GET /v1/auth/sessions
+  - **Bulk logout capabilities** via POST /v1/auth/logout-all
+  - **Security audit trail** with device and activity tracking
+
+  ## 📋 Variables
+
+  - `{{base_url}}` - API base URL (default: http://localhost:8080)
+  - `{{access_token}}` - JWT authentication token (auto-managed)
+  - `{{refresh_token}}` - Refresh token (auto-managed)
+  - `{{user_id}}` - User identifier for requests
+  - `{{task_id}}` - Task ID for AI-generated insights
+
+  ## 🚀 New Session Endpoints
+
+  - **GET /v1/auth/sessions** - List all active user sessions
+  - **POST /v1/auth/logout-all** - Logout from all devices
+  - **Session Management Flow** - Complete testing guide
+
+  ## 🔄 Session Lifecycle
+
+  1. **Register/Login** → Creates session automatically
+  2. **Use API** → Updates session activity on each call
+  3. **Monitor** → View active sessions across devices
+  4. **Logout** → Deactivate current or all sessions
 }

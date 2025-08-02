@@ -29,9 +29,24 @@ services:
     ports:
       - "6379:6379"
 
+  # Development Ollama ui
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    volumes:
+      - open-webui:/app/backend/data
+    ports:
+      - "3000:8080"
+    environment:
+      - 'OLLAMA_BASE_URL=http://host.docker.internal:11434'
+      - 'WEBUI_SECRET_KEY='
+    extra_hosts:
+      - host.docker.internal:host-gateway
+
 networks:
   dev:
     driver: bridge
 
 volumes:
   postgres_dev_data:
+  open-webui:

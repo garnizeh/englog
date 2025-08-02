@@ -95,7 +95,7 @@ func TestAnalyticsService_ComprehensiveValidation(t *testing.T) {
 
 	t.Run("UserIDValidationEdgeCases", func(t *testing.T) {
 		ctx := context.Background()
-		
+
 		tests := []struct {
 			name    string
 			userID  string

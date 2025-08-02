@@ -7,6 +7,7 @@
 - create rfcs
 - create logger for tests: many testes create their own logger, we should create a common one in testutils
 - refactor api to use logger patterns (see worker)
+- move the taskResults in the grpc.Server to a sqlite database
 
 ### 🎯 Task 0125: Hierarchical LLM Model Configuration System
 **Priority**: HIGH

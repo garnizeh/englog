@@ -14,6 +14,13 @@ auth:bearer {
   token: {{access_token}}
 }
 
+script:post-response {
+  if (res.status === 200) {
+    console.log(`Profile retrieved for user: ${res.body.email}`);
+    console.log(`Session activity updated automatically`);
+  }
+}
+
 tests {
   test("should get user profile successfully", function() {
     expect(res.status).to.equal(200);

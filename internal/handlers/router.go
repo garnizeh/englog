@@ -73,11 +73,13 @@ func SetupRoutes(
 		auth.POST("/refresh", authService.RefreshHandler)
 		auth.POST("/logout", authService.LogoutHandler)
 		auth.GET("/me", authService.RequireAuth(), authService.MeHandler)
+		auth.GET("/sessions", authService.RequireAuth(), authService.GetActiveSessionsHandler)
+		auth.POST("/logout-all", authService.RequireAuth(), authService.LogoutFromAllDevicesHandler)
 	}
 
-	// Protected endpoints
+	// Protected endpoints with session tracking
 	protected := v1.Group("/")
-	protected.Use(authService.RequireAuth())
+	protected.Use(authService.RequireAuthWithSession())
 
 	// Log entries
 	logEntryHandler := NewLogEntryHandler(logEntryService)

@@ -118,6 +118,13 @@ func (a *AuthService) RegisterHandler(c *gin.Context) {
 
 	a.logger.WithContext(ctx).Info("User registration completed successfully", "email", req.Email, "user_id", user.ID, "ip", c.ClientIP())
 
+	// Create session for the user
+	_, err = a.CreateUserSession(ctx, user.ID.String(), accessToken, refreshToken, c.ClientIP(), c.GetHeader("User-Agent"))
+	if err != nil {
+		a.logger.LogError(ctx, err, "Failed to create user session after registration", "email", req.Email, "user_id", user.ID)
+		// Don't fail registration for session creation error, just log it
+	}
+
 	c.JSON(http.StatusCreated, gin.H{
 		"user": convertToUserProfile(user),
 		"tokens": models.AuthTokens{
@@ -215,6 +222,13 @@ func (a *AuthService) LoginHandler(c *gin.Context) {
 
 	a.logger.WithContext(ctx).Info("User login successful", "email", req.Email, "user_id", user.ID, "ip", c.ClientIP())
 
+	// Create session for the user
+	_, err = a.CreateUserSession(ctx, user.ID.String(), accessToken, refreshToken, c.ClientIP(), c.GetHeader("User-Agent"))
+	if err != nil {
+		a.logger.LogError(ctx, err, "Failed to create user session during login", "email", req.Email, "user_id", user.ID)
+		// Don't fail login for session creation error, just log it
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"user": convertToUserProfile(user),
 		"tokens": models.AuthTokens{
@@ -261,7 +275,7 @@ func (a *AuthService) RefreshHandler(c *gin.Context) {
 
 	a.logger.Info("Token refresh attempt", "user_id", userID, "ip", c.ClientIP())
 
-	newAccessToken, newRefreshToken, err := a.RotateRefreshToken(ctx, req.RefreshToken)
+	newAccessToken, newRefreshToken, err := a.RotateRefreshTokenWithSession(ctx, req.RefreshToken, c.ClientIP(), c.GetHeader("User-Agent"))
 	if err != nil {
 		a.logger.Warn("Token refresh failed", "error", err.Error(), "user_id", userID, "ip", c.ClientIP())
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -340,6 +354,13 @@ func (a *AuthService) LogoutHandler(c *gin.Context) {
 			})
 			return
 		}
+	}
+
+	// Deactivate sessions for this refresh token
+	err = a.deactivateSessionsByRefreshToken(ctx, req.RefreshToken)
+	if err != nil {
+		a.logger.LogError(ctx, err, "Failed to deactivate sessions during logout", "user_id", userID)
+		// Don't fail logout for session deactivation error, just log it
 	}
 
 	a.logger.Info("User logout successful", "user_id", userID, "ip", c.ClientIP())
@@ -429,4 +450,78 @@ func convertToUserProfile(user store.User) models.UserProfile {
 	profile.CreatedAt = user.CreatedAt.Time
 
 	return profile
+}
+
+// GetActiveSessionsHandler returns active sessions for the current user
+// @Summary Get active sessions
+// @Description Retrieve all active sessions for the currently authenticated user
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Success 200 {object} object{sessions=[]store.UserSession} "Active sessions retrieved"
+// @Failure 401 {object} object{error=string} "Unauthorized"
+// @Failure 500 {object} object{error=string} "Failed to retrieve sessions"
+// @Router /v1/auth/sessions [get]
+func (a *AuthService) GetActiveSessionsHandler(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Unauthorized",
+		})
+		return
+	}
+
+	sessions, err := a.GetActiveSessionsByUser(c.Request.Context(), userID.(string))
+	if err != nil {
+		a.logger.LogError(c.Request.Context(), err, "Failed to get active sessions", "user_id", userID)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to retrieve sessions",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"sessions": sessions,
+		"count":    len(sessions),
+	})
+}
+
+// LogoutFromAllDevicesHandler deactivates all sessions for the current user
+// @Summary Logout from all devices
+// @Description Deactivate all sessions for the currently authenticated user
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Success 200 {object} object{message=string} "Logged out from all devices"
+// @Failure 401 {object} object{error=string} "Unauthorized"
+// @Failure 500 {object} object{error=string} "Failed to logout from all devices"
+// @Router /v1/auth/logout-all [post]
+func (a *AuthService) LogoutFromAllDevicesHandler(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Unauthorized",
+		})
+		return
+	}
+
+	ctx := c.Request.Context()
+	userIDStr := userID.(string)
+
+	a.logger.Info("Logout from all devices request", "user_id", userIDStr, "ip", c.ClientIP())
+
+	err := a.DeactivateUserSessions(ctx, userIDStr)
+	if err != nil {
+		a.logger.LogError(ctx, err, "Failed to deactivate all user sessions", "user_id", userIDStr)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to logout from all devices",
+		})
+		return
+	}
+
+	a.logger.Info("User logged out from all devices", "user_id", userIDStr, "ip", c.ClientIP())
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Successfully logged out from all devices",
+	})
 }

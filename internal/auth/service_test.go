@@ -30,7 +30,8 @@ func TestNewAuthService(t *testing.T) {
 
 // TestCreateAccessToken verifies access token creation
 // "Security is not a product, but a process." 🔐
-func TestCreateAccessToken(ctx context.Context, t *testing.T) {
+func TestCreateAccessToken(t *testing.T) {
+	ctx := context.Background()
 	// Create test logger
 	testLogger := logging.NewTestLogger()
 
@@ -60,7 +61,8 @@ func TestCreateAccessToken(ctx context.Context, t *testing.T) {
 
 // TestCreateRefreshToken verifies refresh token creation
 // "Trust, but verify." 🎯
-func TestCreateRefreshToken(ctx context.Context, t *testing.T) {
+func TestCreateRefreshToken(t *testing.T) {
+	ctx := context.Background()
 	// Create test logger
 	testLogger := logging.NewTestLogger()
 

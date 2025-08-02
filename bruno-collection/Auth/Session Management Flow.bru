@@ -1,0 +1,87 @@
+meta {
+  name: Session Management Flow
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{base_url}}/test/session-flow
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  // This is a test flow to demonstrate session management
+  console.log("🔄 Starting Session Management Flow Test");
+  console.log("This demonstrates the complete session lifecycle:");
+  console.log("1. Register/Login (creates session)");
+  console.log("2. Use protected endpoints (updates session activity)");
+  console.log("3. View active sessions");
+  console.log("4. Logout (deactivates session)");
+  console.log("");
+  console.log("Run the following requests in order:");
+  console.log("1. Register User OR Login User");
+  console.log("2. Get Active Sessions");
+  console.log("3. Any protected endpoint (e.g., Get Me)");
+  console.log("4. Get Active Sessions (see updated activity)");
+  console.log("5. Logout From All Devices");
+  console.log("6. Get Active Sessions (should be empty)");
+}
+
+docs {
+  # Session Management Flow
+
+  This demonstrates the complete session management lifecycle in the EngLog API.
+
+  ## Complete Flow
+
+  ### 1. Authentication (Session Creation)
+  - **Register User** or **Login User** automatically creates a new session
+  - Session includes device info (User-Agent, IP) for security tracking
+  - Returns access and refresh tokens
+
+  ### 2. Session Activity Tracking
+  - Any protected endpoint automatically updates session activity
+  - `last_activity` timestamp is updated on each authenticated request
+  - Helps track user engagement and detect stale sessions
+
+  ### 3. Session Monitoring
+  - **Get Active Sessions** shows all active sessions for the user
+  - View device info, creation time, and last activity
+  - Useful for security monitoring and suspicious activity detection
+
+  ### 4. Session Termination
+  - **Logout User** deactivates the current session
+  - **Logout From All Devices** deactivates ALL user sessions
+  - Tokens become invalid immediately after logout
+
+  ## Security Benefits
+
+  - **Multi-device tracking**: See where you're logged in
+  - **Activity monitoring**: Track when each session was last used
+  - **Bulk logout**: Quickly secure account by logging out everywhere
+  - **Suspicious activity detection**: Identify unknown devices/locations
+
+  ## API Endpoints
+
+  | Endpoint | Purpose | Session Effect |
+  |----------|---------|----------------|
+  | `POST /v1/auth/register` | Create account | Creates new session |
+  | `POST /v1/auth/login` | Authenticate | Creates new session |
+  | `POST /v1/auth/refresh` | Refresh tokens | Updates session activity |
+  | `GET /v1/auth/sessions` | List sessions | No effect (read-only) |
+  | `POST /v1/auth/logout` | Logout current | Deactivates current session |
+  | `POST /v1/auth/logout-all` | Logout all | Deactivates ALL sessions |
+  | Any protected endpoint | Business logic | Updates session activity |
+
+  ## Testing Notes
+
+  To test the complete flow:
+
+  1. Run **Register User** (creates session)
+  2. Run **Get Active Sessions** (should show 1 session)
+  3. Run **Get Me** (updates session activity)
+  4. Run **Get Active Sessions** again (last_activity updated)
+  5. Run **Logout From All Devices** (deactivates all)
+  6. Run **Get Active Sessions** (should show 0 sessions)
+}

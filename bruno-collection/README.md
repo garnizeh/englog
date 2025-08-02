@@ -7,11 +7,14 @@ Esta é uma collection completa do Bruno para testar a API englog, baseada na do
 A collection está organizada nas seguintes pastas:
 
 ### 🔐 Auth
-- **Register User**: Registra um novo usuário e retorna tokens de autenticação
-- **Login User**: Faz login e obtém tokens de acesso
+- **Register User**: Registra um novo usuário e retorna tokens de autenticação (cria sessão automaticamente)
+- **Login User**: Faz login e obtém tokens de acesso (cria nova sessão)
 - **Get Me**: Obtém informações do perfil do usuário autenticado
-- **Refresh Token**: Renova os tokens de acesso usando o refresh token
-- **Logout User**: Invalida o refresh token e faz logout
+- **Refresh Token**: Renova os tokens de acesso usando o refresh token (atualiza atividade da sessão)
+- **Logout User**: Invalida o refresh token e faz logout (desativa sessão atual)
+- **Get Active Sessions**: Lista todas as sessões ativas do usuário
+- **Logout From All Devices**: Desativa todas as sessões ativas do usuário
+- **Session Management Flow**: Guia completo do fluxo de gerenciamento de sessões
 
 ### 🏥 Health
 - **Health Check**: Verifica se a API está funcionando
@@ -119,6 +122,39 @@ Cada requisição inclui testes básicos que verificam:
 - Status codes esperados
 - Presença de campos obrigatórios nas respostas
 - Estrutura básica dos dados retornados
+
+## Gerenciamento de Sessões
+
+A API englog implementa um sistema robusto de gerenciamento de sessões que oferece:
+
+### Recursos de Sessão
+
+- **Criação Automática**: Sessões são criadas automaticamente durante registro e login
+- **Rastreamento de Atividade**: Cada requisição autenticada atualiza a atividade da sessão
+- **Multi-device Support**: Suporte para múltiplas sessões simultâneas
+- **Informações de Dispositivo**: Rastreamento de User-Agent e IP para segurança
+- **Logout Granular**: Logout individual ou de todos os dispositivos
+
+### Fluxo de Sessão
+
+1. **Autenticação** → Cria nova sessão automaticamente
+2. **Uso da API** → Atualiza `last_activity` a cada requisição
+3. **Monitoramento** → Visualiza sessões ativas via `GET /v1/auth/sessions`
+4. **Logout** → Desativa sessão atual ou todas as sessões
+
+### Segurança
+
+- Tokens hasheados antes do armazenamento
+- Validação automática de sessões ativas
+- Limpeza automática de sessões inativas
+- Auditoria completa de atividade por dispositivo
+
+### Endpoints de Sessão
+
+| Endpoint | Propósito |
+|----------|-----------|
+| `GET /v1/auth/sessions` | Lista sessões ativas |
+| `POST /v1/auth/logout-all` | Logout de todos os dispositivos |
 
 ## Exemplos de Dados
 
@@ -323,12 +359,63 @@ The system now creates rich, structured prompts that include:
 
 For detailed documentation, see `ENHANCED_CONTEXT_GUIDE.md`.
 
+## Testando o Gerenciamento de Sessões
+
+### Fluxo Completo de Teste
+
+Para testar o sistema de sessões completo, execute as requisições nesta ordem:
+
+1. **Register User** ou **Login User**
+   - Cria automaticamente uma nova sessão
+   - Salva os tokens nas variáveis de ambiente
+
+2. **Get Active Sessions**
+   - Deve mostrar 1 sessão ativa
+   - Note o `created_at` e `last_activity`
+
+3. **Get Me** (ou qualquer endpoint protegido)
+   - Atualiza automaticamente a atividade da sessão
+   - Session tracking transparente
+
+4. **Get Active Sessions** novamente
+   - Observe que `last_activity` foi atualizado
+   - Demonstra o rastreamento automático
+
+5. **Login User** novamente (mesmo usuário)
+   - Cria uma segunda sessão para simular múltiplos dispositivos
+   - Cada login = nova sessão
+
+6. **Get Active Sessions**
+   - Deve mostrar 2 sessões ativas agora
+   - Diferentes IDs e timestamps
+
+7. **Logout User**
+   - Desativa apenas a sessão atual
+   - Outras sessões permanecem ativas
+
+8. **Logout From All Devices**
+   - Desativa TODAS as sessões
+   - Tokens ficam inválidos imediatamente
+
+9. **Get Active Sessions** (final)
+   - Deve mostrar 0 sessões ativas
+   - Confirma que todas foram desativadas
+
+### Cenários de Segurança
+
+- **Dispositivo comprometido**: Use "Logout From All Devices"
+- **Múltiplos dispositivos**: Monitore via "Get Active Sessions"
+- **Atividade suspeita**: Verifique `last_activity` e `user_agent`
+- **Limpeza periódica**: Logout automático de sessões antigas
+
 ## Troubleshooting
 
 - **401 Unauthorized**: Verifique se o token está válido ou renove-o
+- **Session not found**: Sessão pode ter sido desativada ou expirada - faça login novamente
 - **404 Not Found**: Verifique se os IDs usados existem
 - **Structured Context Issues**: Verifique se o JSON está bem formado
 - **400 Bad Request**: Verifique a estrutura do JSON enviado
+- **Multiple sessions**: Normal ter várias sessões ativas de diferentes dispositivos/logins
 - **Conexão recusada**: Verifique se a API está rodando na URL configurada
 
 ---

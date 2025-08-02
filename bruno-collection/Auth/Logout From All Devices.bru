@@ -1,0 +1,73 @@
+meta {
+  name: Logout From All Devices
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{base_url}}/v1/auth/logout-all
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+headers {
+  Content-Type: application/json
+  User-Agent: Bruno/1.0
+}
+
+assert {
+  res.status: eq 200
+  res.body.message: eq "Successfully logged out from all devices"
+  res.body.sessions_deactivated: gte 1
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log(`Successfully logged out from ${res.body.sessions_deactivated} sessions`);
+    console.log("All sessions have been deactivated");
+
+    // Note: The current access token is now invalid
+    // You'll need to login again to get new tokens
+    console.log("⚠️  Current access token is now invalid - login required");
+  }
+}
+
+docs {
+  # Logout From All Devices
+
+  This endpoint deactivates all active sessions for the authenticated user across all devices.
+
+  ## Response Format
+
+  ```json
+  {
+    "message": "Successfully logged out from all devices",
+    "sessions_deactivated": 3
+  }
+  ```
+
+  ## Use Cases
+
+  - Security response to suspicious activity
+  - Account compromise recovery
+  - Privacy when using shared/public devices
+  - Force re-authentication across all devices
+
+  ## Important Notes
+
+  - **Current token becomes invalid** after this call
+  - All active sessions are immediately deactivated
+  - User must login again on all devices
+  - Useful for security incidents or account recovery
+
+  ## Security Implications
+
+  - Immediately invalidates all access tokens
+  - Forces fresh authentication on all devices
+  - Helps prevent unauthorized access
+  - Should be used when account security is compromised
+}
