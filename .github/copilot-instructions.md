@@ -81,20 +81,51 @@ The system will be architected around three main components:
 
 ---
 
-## 5. Proposed Technology Stack
+## 5. Project Planning & Development Roadmap
+
+**IMPORTANT:** The project planning and task management is organized in `docs/planning/`.
+
+**Before starting any development work, you must:**
+
+1. **Review the development roadmap:** [`docs/planning/ROADMAP.md`](../docs/planning/ROADMAP.md) - Contains the complete 6-phase development plan from Phase 0 (Dev Prototype) through Phase 5 (Enterprise Scale). Understand which phase the project is currently in and the specific objectives and scope for that phase.
+
+2. **Check current task assignments:**
+
+   - [`docs/planning/backlog/`](../docs/planning/backlog/) - **Phase 0 (Dev Prototype) Tasks**: Contains 9 prototype tasks (PROTOTYPE-001 through PROTOTYPE-009) for the simplified development version with in-memory storage, direct Ollama integration, and manual testing. Includes comprehensive README.md with task dependencies and development sequence.
+   - [`docs/planning/in-progress/`](../docs/planning/in-progress/) - **Active Development**: Tasks currently being implemented
+   - [`docs/planning/done/`](../docs/planning/done/) - **Completed Tasks**: Successfully implemented and tested features
+   - [`docs/planning/canceled/`](../docs/planning/canceled/) - **Canceled Tasks**: Discontinued or superseded features
+
+3. **Understand task prioritization:**
+
+   - **Current Phase**: Phase 0 (Dev Prototype) - Focus on rapid concept validation
+   - **Core Dependencies**: PROTOTYPE-001 (basic API) → PROTOTYPE-002 (journal endpoints) → AI integration tasks
+   - **Success Criteria**: Journal creation, AI analysis via Ollama, data retrieval, system health monitoring
+
+4. **Task Implementation Guidelines:**
+   - Follow the Phase 0 scope: No authentication, in-memory storage, synchronous processing
+   - Prioritize simplicity and speed over production readiness
+   - Each task has clear acceptance criteria and technical specifications
+   - Manual testing with curl/Postman examples instead of automated tests
+
+**All development work must align with the current phase objectives and task specifications.** Do not implement features from future phases unless explicitly requested.
+
+---
+
+## 6. Proposed Technology Stack
 
 The following technology stack is proposed as a starting point for the architecture. You are expected to evaluate, refine, and justify these choices in the architecture document.
 
 - **Backend Language:** Go 1.24+
 - **API Framework:** Gin (to be evaluated)
-- **Database:** NoSQL (Specific database like MongoDB, DynamoDB, or Firestore to be decided during the design phase).
+- **Database:** NoSQL (Postgres).
 - **Inter-service Communication:** gRPC for communication between the API and Worker services.
 - **Containerization:** Docker & Docker Compose for local development and deployment.
 - **Cloud Provider:** To be determined (e.g., AWS, GCP, Azure).
 
 ---
 
-## 6. Key Design Principles (Mandatory)
+## 7. Key Design Principles (Mandatory)
 
 All architectural decisions and code implementation must adhere to these principles:
 
@@ -108,11 +139,11 @@ All architectural decisions and code implementation must adhere to these princip
 
 ---
 
-## 7. Development Workflow
+## 8. Development Workflow
 
 This project will follow an evolutionary, architecture-aware development model. The goal is to establish a solid but flexible foundation that can adapt as the project grows.
 
-1.  **Phase 1: Foundational Architecture & Design (Current Phase)**
+1.  **Phase 1: Foundational Architecture & Design (Future Phase)**
 
     - Create the initial System Architecture Document, focusing on core components, boundaries, and key decisions.
     - Define the initial API contracts (gRPC/Protobuf) and core domain models.
