@@ -7,14 +7,14 @@ Develop a basic Go REST API server that provides essential journal endpoints wit
 
 **Acceptance_Criteria:**
 
-- [ ] Go HTTP server starts and responds to requests on port 8080
-- [ ] In-memory data structures store journal entries (slice of structs)
-- [ ] Basic JSON request/response handling is functional
-- [ ] Server gracefully handles startup and shutdown
-- [ ] Structured logging outputs request information for debugging
-- [ ] Basic error handling returns appropriate HTTP status codes
-- [ ] No authentication or authorization required
-- [ ] Data persists only during server runtime (lost on restart)
+- [x] Go HTTP server starts and responds to requests on port 8080
+- [x] In-memory data structures store journal entries (slice of structs)
+- [x] Basic JSON request/response handling is functional
+- [x] Server gracefully handles startup and shutdown
+- [x] Structured logging outputs request information for debugging
+- [x] Basic error handling returns appropriate HTTP status codes
+- [x] No authentication or authorization required
+- [x] Data persists only during server runtime (lost on restart)
 
 **Technical_Specifications:**
 
