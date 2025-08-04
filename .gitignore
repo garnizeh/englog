@@ -1,0 +1,44 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.out
+
+# Project-specific binaries
+englog
+
+# Dependency directories
+# vendor/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Log files
+*.log
+logs/
+
+# Build artifacts
+/build/
+/dist/
+
+# IDE settings
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS-generated files
+.DS_Store
+ehthumbs.db
+Thumbs.db
