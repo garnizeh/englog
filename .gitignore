@@ -4,7 +4,6 @@
 *.dll
 *.so
 *.dylib
-bin/
 
 # Test binary, built with `go test -c`
 *.test
@@ -15,6 +14,11 @@ coverage.out
 
 # Project-specific binaries
 englog
+englog-api
+
+# Build directory
+bin/
+dist/
 
 # Dependency directories
 # vendor/
