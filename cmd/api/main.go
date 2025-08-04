@@ -30,12 +30,15 @@ func main() {
 
 	// Initialize handlers
 	healthHandler := handlers.NewHealthHandler(store)
+	journalHandler := handlers.NewJournalHandler(store)
 
 	// Setup HTTP server and routes
 	mux := http.NewServeMux()
 
 	// Add middleware for logging and basic error handling
 	mux.Handle("/health", loggingMiddleware(healthHandler))
+	mux.Handle("/journals", loggingMiddleware(journalHandler))
+	mux.Handle("/journals/", loggingMiddleware(journalHandler)) // For /journals/{id} paths
 	mux.Handle("/", loggingMiddleware(http.HandlerFunc(defaultHandler)))
 
 	// Get port from environment or use default
@@ -60,7 +63,7 @@ func main() {
 	go func() {
 		slog.Info("Starting EngLog API server",
 			"port", port,
-			"version", "prototype-001",
+			"version", "prototype-002",
 			"storage", "memory")
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -123,12 +126,15 @@ func (rw *responseWriter) WriteHeader(code int) {
 
 // defaultHandler handles requests to unknown endpoints
 func defaultHandler(w http.ResponseWriter, r *http.Request) {
-	response := map[string]interface{}{
+	response := map[string]any{
 		"message": "EngLog API - Phase 0 (Dev Prototype)",
-		"version": "prototype-001",
+		"version": "prototype-002",
 		"status":  "active",
 		"endpoints": map[string]string{
-			"health": "/health",
+			"health":            "/health",
+			"create_journal":    "POST /journals",
+			"get_all_journals":  "GET /journals",
+			"get_journal_by_id": "GET /journals/{id}",
 		},
 		"documentation": "https://github.com/garnizeh/englog",
 	}

@@ -450,7 +450,7 @@ func TestAPI_Integration(t *testing.T) {
         resp := makeRequest(t, client, "POST", server.URL+"/api/auth/register", registerReq)
         assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
-        var registerResp map[string]interface{}
+        var registerResp map[string]any
         err := json.NewDecoder(resp.Body).Decode(&registerResp)
         require.NoError(t, err)
 
@@ -462,7 +462,7 @@ func TestAPI_Integration(t *testing.T) {
         resp = makeRequest(t, client, "POST", server.URL+"/api/auth/login", loginReq)
         assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-        var loginResp map[string]interface{}
+        var loginResp map[string]any
         err = json.NewDecoder(resp.Body).Decode(&loginResp)
         require.NoError(t, err)
 
@@ -482,7 +482,7 @@ func TestAPI_Integration(t *testing.T) {
         token := authenticateTestUser(t, client, server.URL)
 
         // Create journal
-        journalReq := map[string]interface{}{
+        journalReq := map[string]any{
             "content": "This is my test journal entry.",
             "tags":    []string{"test", "api"},
         }
@@ -491,7 +491,7 @@ func TestAPI_Integration(t *testing.T) {
             server.URL+"/api/journals", journalReq, token)
         assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
-        var createResp map[string]interface{}
+        var createResp map[string]any
         err := json.NewDecoder(resp.Body).Decode(&createResp)
         require.NoError(t, err)
 
@@ -503,7 +503,7 @@ func TestAPI_Integration(t *testing.T) {
         assert.Equal(t, http.StatusOK, resp.StatusCode)
 
         // Update journal
-        updateReq := map[string]interface{}{
+        updateReq := map[string]any{
             "content": "Updated journal content.",
         }
 
@@ -519,7 +519,7 @@ func TestAPI_Integration(t *testing.T) {
 }
 
 func makeAuthenticatedRequest(t *testing.T, client *http.Client, method, url string,
-    body interface{}, token string) *http.Response {
+    body any, token string) *http.Response {
 
     var reqBody io.Reader
     if body != nil {
@@ -963,7 +963,7 @@ func TestSecurityVulnerabilities(t *testing.T) {
             // Should accept the request
             assert.Equal(t, http.StatusCreated, resp.StatusCode)
 
-            var journal map[string]interface{}
+            var journal map[string]any
             json.NewDecoder(resp.Body).Decode(&journal)
 
             // But content should be escaped

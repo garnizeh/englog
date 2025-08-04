@@ -461,7 +461,7 @@ type JWTClaims struct {
     Name      string                 `json:"name"`
     Scope     []string               `json:"scope"`
     Provider  string                 `json:"auth_provider,omitempty"`
-    UserMeta  map[string]interface{} `json:"user_metadata,omitempty"`
+    UserMeta  map[string]any `json:"user_metadata,omitempty"`
     jwt.RegisteredClaims
 }
 
@@ -497,7 +497,7 @@ func (j *JWTService) GenerateTokenPair(user *User) (*TokenPair, error) {
         Name:   user.Name,
         Scope:  j.getUserScopes(user),
         Provider: user.AuthProvider,
-        UserMeta: map[string]interface{}{
+        UserMeta: map[string]any{
             "timezone": user.Preferences.Timezone,
             "language": user.Preferences.Language,
         },
@@ -549,7 +549,7 @@ func (j *JWTService) GenerateTokenPair(user *User) (*TokenPair, error) {
 }
 
 func (j *JWTService) ValidateToken(tokenString string) (*JWTClaims, error) {
-    token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+    token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (any, error) {
         if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
             return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
         }
@@ -569,7 +569,7 @@ func (j *JWTService) ValidateToken(tokenString string) (*JWTClaims, error) {
 
 func (j *JWTService) RefreshToken(refreshTokenString string) (*TokenPair, error) {
     // Validate refresh token
-    token, err := jwt.ParseWithClaims(refreshTokenString, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+    token, err := jwt.ParseWithClaims(refreshTokenString, &JWTClaims{}, func(token *jwt.Token) (any, error) {
         return j.refreshPublicKey, nil
     })
 
@@ -719,7 +719,7 @@ type Session struct {
     IPAddress    string                 `json:"ip_address"`
     CreatedAt    time.Time              `json:"created_at"`
     LastActivity time.Time              `json:"last_activity"`
-    Metadata     map[string]interface{} `json:"metadata"`
+    Metadata     map[string]any `json:"metadata"`
 }
 
 func (s *SessionStore) CreateSession(userID, tokenID, deviceInfo, ipAddress string) error {
@@ -730,7 +730,7 @@ func (s *SessionStore) CreateSession(userID, tokenID, deviceInfo, ipAddress stri
         IPAddress:    ipAddress,
         CreatedAt:    time.Now(),
         LastActivity: time.Now(),
-        Metadata:     make(map[string]interface{}),
+        Metadata:     make(map[string]any),
     }
 
     sessionData, _ := json.Marshal(session)
@@ -865,7 +865,7 @@ type AuthEvent struct {
     UserAgent   string                 `json:"user_agent"`
     Success     bool                   `json:"success"`
     Error       string                 `json:"error,omitempty"`
-    Metadata    map[string]interface{} `json:"metadata,omitempty"`
+    Metadata    map[string]any `json:"metadata,omitempty"`
     Timestamp   time.Time              `json:"timestamp"`
 }
 

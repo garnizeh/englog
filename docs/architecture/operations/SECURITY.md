@@ -426,7 +426,7 @@ type JournalEntryRequest struct {
     Title   *string                `json:"title" validate:"omitempty,max=200"`
     Content string                 `json:"content" validate:"required,max=50000"`
     Tags    []string              `json:"tags" validate:"dive,max=50,alphanum"`
-    Metadata map[string]interface{} `json:"metadata" validate:"dive,keys,alphanum,endkeys,required"`
+    Metadata map[string]any `json:"metadata" validate:"dive,keys,alphanum,endkeys,required"`
 }
 
 func ValidateJournalEntry(req *JournalEntryRequest) error {
@@ -528,7 +528,7 @@ func (s *Store) GetUserJournals(ctx context.Context, userID uuid.UUID, limit, of
 }
 
 // Additional query validation
-func validateQueryParams(params interface{}) error {
+func validateQueryParams(params any) error {
     v := reflect.ValueOf(params)
     if v.Kind() == reflect.Ptr {
         v = v.Elem()
@@ -686,7 +686,7 @@ type SecurityEvent struct {
     Action      string                 `json:"action,omitempty"`
     Success     bool                   `json:"success"`
     Error       string                 `json:"error,omitempty"`
-    Metadata    map[string]interface{} `json:"metadata,omitempty"`
+    Metadata    map[string]any `json:"metadata,omitempty"`
     Timestamp   time.Time              `json:"timestamp"`
 }
 
@@ -844,7 +844,7 @@ type Threat struct {
     RuleName    string
     Severity    string
     Description string
-    Evidence    map[string]interface{}
+    Evidence    map[string]any
     Confidence  float64
 }
 
@@ -882,7 +882,7 @@ func (id *IntrusionDetector) checkSQLInjection(rule DetectionRule, c *gin.Contex
                 RuleName:    rule.Name,
                 Severity:    rule.Severity,
                 Description: "Potential SQL injection attempt detected",
-                Evidence: map[string]interface{}{
+                Evidence: map[string]any{
                     "pattern":      pattern,
                     "query_string": queryString,
                     "endpoint":     c.Request.URL.Path,
@@ -903,7 +903,7 @@ func (id *IntrusionDetector) checkSQLInjection(rule DetectionRule, c *gin.Contex
                     RuleName:    rule.Name,
                     Severity:    rule.Severity,
                     Description: "Potential SQL injection in request body",
-                    Evidence: map[string]interface{}{
+                    Evidence: map[string]any{
                         "pattern": pattern,
                         "body_snippet": string(body)[:min(len(body), 100)],
                     },
@@ -945,7 +945,7 @@ func NewVaultClient(address, token string) (*VaultClient, error) {
     }, nil
 }
 
-func (vc *VaultClient) GetSecret(path string) (map[string]interface{}, error) {
+func (vc *VaultClient) GetSecret(path string) (map[string]any, error) {
     secret, err := vc.client.Logical().Read(vc.mountPath + path)
     if err != nil {
         return nil, err
@@ -958,7 +958,7 @@ func (vc *VaultClient) GetSecret(path string) (map[string]interface{}, error) {
     return secret.Data, nil
 }
 
-func (vc *VaultClient) StoreSecret(path string, data map[string]interface{}) error {
+func (vc *VaultClient) StoreSecret(path string, data map[string]any) error {
     _, err := vc.client.Logical().Write(vc.mountPath+path, data)
     return err
 }

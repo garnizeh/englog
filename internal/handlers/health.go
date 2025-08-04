@@ -28,12 +28,12 @@ func (h *HealthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"status":    "healthy",
 		"timestamp": time.Now().UTC(),
 		"service":   "englog-api",
 		"version":   "prototype-001",
-		"storage": map[string]interface{}{
+		"storage": map[string]any{
 			"type":          "memory",
 			"journal_count": h.store.Count(),
 		},

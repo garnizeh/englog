@@ -136,6 +136,7 @@ All architectural decisions and code implementation must adhere to these princip
 - **Observability:** Plan for structured logging, metrics, and distributed tracing from day one.
 - **API-First Design:** Define API contracts (e.g., using OpenAPI for REST or Protobuf for gRPC) before implementation to ensure clear communication between services.
 - **Simplicity and Evolutionary Design (YAGNI - You Ain't Gonna Need It):** Start with the simplest possible solution that works. Avoid premature optimization and over-engineering. The architecture should be designed to evolve and accommodate complexity as required, not before.
+- **🚨 CRITICAL Go Coding Rule:** **NEVER use `interface{}` in any code.** Always use `any` (Go 1.18+) instead. This is a mandatory coding standard for all Go code in this project. The `any` keyword is the modern, readable alias for `interface{}` and must be used consistently throughout the codebase.
 
 ---
 
