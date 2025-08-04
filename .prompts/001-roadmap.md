@@ -1,23 +1,23 @@
-**Tarefa:** Analisar a documentação de arquitetura de software contida na pasta `docs/architecture/` e extrair uma definição detalhada para as fases de evolução do produto: MVP, Versão 2 (V2) e Versão 3 (V3).
+**Task:** Analyze the software architecture documentation contained in the `docs/architecture/` folder and extract a detailed definition for the product evolution phases: MVP, Version 2 (V2), and Version 3 (V3).
 
-**Contexto:** Você é um Product Manager técnico revisando um documento de arquitetura para criar um resumo executivo do roadmap de desenvolvimento. Sua análise deve ir além de encontrar palavras-chave e deve sintetizar as informações a partir de descrições de componentes, diagramas de sequência, requisitos não-funcionais e objetivos de negócio.
+**Context:** You are a technical Product Manager reviewing an architecture document to create an executive summary of the development roadmap. Your analysis should go beyond finding keywords and should synthesize information from component descriptions, sequence diagrams, non-functional requirements, and business objectives.
 
-**Formato da Resposta:**
-Para cada versão (MVP, V2, V3), forneça uma análise estruturada contendo:
-
----
-
-**Fase: [Nome da Fase - ex: MVP]**
-
-- **Definição Sumária:** (Em uma frase, qual é a essência desta versão?)
-- **Objetivo de Negócio:** (Que meta de negócio esta versão visa atingir? Ex: Validar a hipótese X, Aumentar a retenção em Y%, Entrar no mercado Z.)
-- **Escopo Funcional Principal:** (Liste em formato de bullet points as principais epopeias ou funcionalidades que definem o escopo desta entrega.)
-- **Decisões de Arquitetura Chave:** (Liste as decisões de arquitetura mais impactantes para esta fase. Ex: "Adoção de arquitetura monolítica para agilizar a entrega inicial", "Introdução do microsserviço de pagamentos", "Migração do banco de dados para suportar maior volume de dados".)
-- **Critérios de Prontidão (Se mencionado):** (O que define que esta fase está completa? Ex: "Capacidade de suportar 1.000 usuários concorrentes", "Cobertura de testes de 80% no módulo core".)
-- **Escopo Negativo Explícito:** (O que a documentação afirma que NÃO fará parte desta fase?)
+**Response Format:**
+For each version (MVP, V2, V3), provide a structured analysis containing:
 
 ---
 
-(Repita a estrutura acima para V2 e V3)
+**Phase: [Phase Name - e.g., MVP]**
 
-**Instrução final:** Se a documentação não usar os rótulos "MVP", "V2" ou "V3", infira as fases a partir da progressão lógica das funcionalidades descritas no roadmap ou na estrutura do documento.
+- **Summary Definition:** (In one sentence, what is the essence of this version?)
+- **Business Objective:** (What business goal does this version aim to achieve? E.g., Validate hypothesis X, Increase retention by Y%, Enter market Z.)
+- **Main Functional Scope:** (List in bullet point format the main epics or functionalities that define the scope of this delivery.)
+- **Key Architecture Decisions:** (List the most impactful architecture decisions for this phase. E.g., "Adoption of monolithic architecture to accelerate initial delivery", "Introduction of payments microservice", "Database migration to support higher data volume".)
+- **Readiness Criteria (If mentioned):** (What defines that this phase is complete? E.g., "Capability to support 1,000 concurrent users", "Test coverage of 80% in core module".)
+- **Explicit Negative Scope:** (What does the documentation state will NOT be part of this phase?)
+
+---
+
+(Repeat the above structure for V2 and V3)
+
+**Final Instruction:** If the documentation does not use the labels "MVP", "V2", or "V3", infer the phases from the logical progression of functionalities described in the roadmap or document structure.
