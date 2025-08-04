@@ -6,6 +6,7 @@ Generate a complete system architecture document for the **"englog"** project. T
 
 **Project Context: "englog"**
 "englog" is a system designed to collect, process, and analyze user journals through artificial intelligence. The architecture comprises three core components:
+
 1.  **API:** Collects user journals and stores them in a NoSQL database.
 2.  **Worker:** Processes the journals with AI (for enrichment, sentiment analysis, insight generation, etc.) and saves the results in a separate NoSQL database.
 3.  **Web Application:** Allows users to view their data and interact with the system.
@@ -27,10 +28,11 @@ The document **must** contain the following sections, detailing every aspect of 
 12. **Glossary:** Define technical terms and acronyms used in the document to ensure uniform understanding.
 
 **Quality and Format Requirements:**
-*   **Language:** Clear, concise, and objective, suitable for both technical and non-technical audiences.
-*   **Tone:** Professional, reflecting Garnizeh's standards of excellence.
-*   **Format:** Use Markdown for clean, readable formatting. Incorporate diagrams and flowcharts to illustrate complex concepts.
-*   **Maintenance:** The document must be treated as a "living document," versioned (e.g., in a Git repository), and include a changelog to record architectural modifications.
+
+- **Language:** Clear, concise, and objective, suitable for both technical and non-technical audiences.
+- **Tone:** Professional, reflecting Garnizeh's standards of excellence.
+- **Format:** Use Markdown for clean, readable formatting. Incorporate diagrams and flowcharts to illustrate complex concepts.
+- **Maintenance:** The document must be treated as a "living document," versioned (e.g., in a Git repository), and include a changelog to record architectural modifications.
 
 **Final Directive:**
 If there is any ambiguity regarding the requirements or scope, formulate clear and direct questions to ensure complete alignment before proceeding. Precision is critical.

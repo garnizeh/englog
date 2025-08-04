@@ -51,18 +51,33 @@ The system will be architected around three main components:
 
 ---
 
-## 4. Current Goal & Immediate Task
+## 4. Architecture Documentation Reference
 
-**The project is in its initial design phase. No code has been implemented yet.**
+**IMPORTANT:** The project now has comprehensive modular architecture documentation located in `docs/architecture/`.
 
-Your **primary and immediate task** is to generate a complete and comprehensive **System Architecture Document**.
+**Before making any architectural decisions or implementing code, you must:**
 
-- **Reference Prompt:** You must use the detailed instructions provided in `.prompts/000-initial.md` as the definitive guide for creating this document.
-- **Objective:** The resulting document will serve as the foundational blueprint for the entire project. It must be detailed enough for developers to understand the system's design and for stakeholders to grasp the project's scope.
-- **Deliverable:**
-  - **File:** `docs/architecture/SYSTEM_ARCHITECTURE.md`
-  - **Format:** Markdown.
-  - **Diagrams:** Use Mermaid.js syntax for any necessary diagrams (e.g., C4 model, sequence diagrams).
+1. **Start with the main index:** [`docs/architecture/README.md`](../docs/architecture/README.md) - This provides a complete catalog and navigation guide for all architecture documents.
+
+2. **Review the executive overview:** [`docs/architecture/OVERVIEW.md`](../docs/architecture/OVERVIEW.md) - Contains high-level business objectives, system context, and architectural overview.
+
+3. **Understand the core components:**
+
+   - [`docs/architecture/components/API_SERVICE.md`](../docs/architecture/components/API_SERVICE.md) - Detailed REST and gRPC API design
+   - [`docs/architecture/components/WORKER_POOL.md`](../docs/architecture/components/WORKER_POOL.md) - Distributed processing architecture
+   - [`docs/architecture/components/DATABASE.md`](../docs/architecture/components/DATABASE.md) - PostgreSQL schema and storage strategies
+   - [`docs/architecture/components/WEB_APPLICATION.md`](../docs/architecture/components/WEB_APPLICATION.md) - Frontend architecture
+
+4. **Check design specifications:**
+
+   - [`docs/architecture/design/AUTHENTICATION.md`](../docs/architecture/design/AUTHENTICATION.md) - OAuth 2.0, OTP, and security strategies
+
+5. **Review operational guidelines:**
+   - [`docs/architecture/operations/DEPLOYMENT.md`](../docs/architecture/operations/DEPLOYMENT.md) - Deployment strategies and infrastructure
+   - [`docs/architecture/operations/SECURITY.md`](../docs/architecture/operations/SECURITY.md) - Security considerations and implementation
+   - [`docs/architecture/operations/TESTING.md`](../docs/architecture/operations/TESTING.md) - Comprehensive testing strategy
+
+**All architectural decisions, code implementations, and technical choices must align with the specifications in these documents.** Use them as the definitive reference for system design, patterns, and implementation details.
 
 ---
 
@@ -70,7 +85,7 @@ Your **primary and immediate task** is to generate a complete and comprehensive 
 
 The following technology stack is proposed as a starting point for the architecture. You are expected to evaluate, refine, and justify these choices in the architecture document.
 
-- **Backend Language:** Go
+- **Backend Language:** Go 1.24+
 - **API Framework:** Gin (to be evaluated)
 - **Database:** NoSQL (Specific database like MongoDB, DynamoDB, or Firestore to be decided during the design phase).
 - **Inter-service Communication:** gRPC for communication between the API and Worker services.
