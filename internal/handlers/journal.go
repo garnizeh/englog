@@ -9,18 +9,21 @@ import (
 
 	"github.com/garnizeh/englog/internal/models"
 	"github.com/garnizeh/englog/internal/storage"
+	"github.com/garnizeh/englog/internal/worker"
 	"github.com/google/uuid"
 )
 
 // JournalHandler handles journal-related HTTP requests
 type JournalHandler struct {
-	store *storage.MemoryStore
+	store  *storage.MemoryStore
+	worker *worker.InMemoryWorker
 }
 
 // NewJournalHandler creates a new journal handler
-func NewJournalHandler(store *storage.MemoryStore) *JournalHandler {
+func NewJournalHandler(store *storage.MemoryStore, worker *worker.InMemoryWorker) *JournalHandler {
 	return &JournalHandler{
-		store: store,
+		store:  store,
+		worker: worker,
 	}
 }
 
@@ -78,7 +81,25 @@ func (h *JournalHandler) createJournal(w http.ResponseWriter, r *http.Request) {
 		Metadata:  req.Metadata,
 	}
 
-	// Store the journal
+	// Process journal with AI synchronously (with graceful failure handling)
+	if h.worker != nil {
+		slog.Info("Starting synchronous AI processing for journal",
+			"journal_id", journal.ID,
+			"content_length", len(journal.Content))
+
+		h.worker.ProcessJournalWithGracefulFailure(r.Context(), journal)
+
+		if journal.ProcessingResult != nil {
+			slog.Info("AI processing completed",
+				"journal_id", journal.ID,
+				"status", journal.ProcessingResult.Status,
+				"processing_time", journal.ProcessingResult.ProcessingTime)
+		}
+	} else {
+		slog.Warn("No AI worker available, skipping processing", "journal_id", journal.ID)
+	}
+
+	// Store the journal (with processing results if available)
 	if err := h.store.Store(journal); err != nil {
 		slog.Error("Failed to store journal", "error", err, "journal_id", journal.ID)
 		h.sendErrorResponse(w, "Failed to create journal entry", http.StatusInternalServerError)
@@ -87,9 +108,16 @@ func (h *JournalHandler) createJournal(w http.ResponseWriter, r *http.Request) {
 
 	slog.Info("Journal created successfully",
 		"journal_id", journal.ID,
-		"content_length", len(journal.Content))
+		"content_length", len(journal.Content),
+		"ai_processed", journal.ProcessingResult != nil,
+		"processing_status", func() string {
+			if journal.ProcessingResult != nil {
+				return string(journal.ProcessingResult.Status)
+			}
+			return "not_processed"
+		}())
 
-	// Return the created journal
+	// Return the created journal with processing results
 	h.sendJSONResponse(w, journal, http.StatusCreated)
 }
 
