@@ -13,6 +13,7 @@ import (
 	"github.com/garnizeh/englog/internal/ai"
 	"github.com/garnizeh/englog/internal/handlers"
 	"github.com/garnizeh/englog/internal/storage"
+	"github.com/garnizeh/englog/internal/worker"
 )
 
 const (
@@ -47,12 +48,20 @@ func main() {
 
 	// Initialize handlers
 	healthHandler := handlers.NewHealthHandler(store)
-	journalHandler := handlers.NewJournalHandler(store)
+
+	// Initialize AI service
 	aiService, err := ai.NewService(ctx, modelName, ollamaURL)
 	if err != nil {
 		slog.Error("Failed to create AI service", "error", err)
 		os.Exit(1)
 	}
+
+	// Initialize AI worker for synchronous processing
+	aiWorker := worker.NewInMemoryWorker(aiService)
+
+	// Initialize journal handler with AI worker
+	journalHandler := handlers.NewJournalHandler(store, aiWorker)
+
 	aiHandler := handlers.NewAIHandler(store, aiService)
 
 	// Setup HTTP server and routes
@@ -92,9 +101,10 @@ func main() {
 	go func() {
 		slog.Info("Starting EngLog API server",
 			"port", port,
-			"version", "prototype-003",
+			"version", "prototype-004",
 			"storage", "memory",
-			"ai_integration", "ollama")
+			"ai_integration", "ollama",
+			"features", []string{"synchronous_ai_processing", "sentiment_analysis"})
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			slog.Error("Server failed to start", "error", err)
@@ -158,13 +168,22 @@ func (rw *responseWriter) WriteHeader(code int) {
 func defaultHandler(w http.ResponseWriter, r *http.Request) {
 	response := map[string]any{
 		"message": "EngLog API - Phase 0 (Dev Prototype)",
-		"version": "prototype-002",
+		"version": "prototype-004",
 		"status":  "active",
+		"features": []string{
+			"Journal CRUD operations",
+			"Synchronous AI sentiment analysis",
+			"In-memory storage",
+			"Ollama integration",
+		},
 		"endpoints": map[string]string{
 			"health":            "/health",
 			"create_journal":    "POST /journals",
 			"get_all_journals":  "GET /journals",
 			"get_journal_by_id": "GET /journals/{id}",
+			"ai_analyze":        "POST /ai/analyze-sentiment",
+			"ai_generate":       "POST /ai/generate-journal",
+			"ai_health":         "GET /ai/health",
 		},
 		"documentation": "https://github.com/garnizeh/englog",
 	}

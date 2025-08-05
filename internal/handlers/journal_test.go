@@ -2,20 +2,57 @@ package handlers_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/garnizeh/englog/internal/handlers"
 	"github.com/garnizeh/englog/internal/models"
 	"github.com/garnizeh/englog/internal/storage"
+	"github.com/garnizeh/englog/internal/worker"
 )
+
+// mockAIProcessor is a mock implementation for testing
+type mockAIProcessor struct {
+	shouldFail      bool
+	sentimentResult *models.SentimentResult
+}
+
+func (m *mockAIProcessor) ProcessJournalSentiment(ctx context.Context, journal *models.Journal) (*models.SentimentResult, error) {
+	if m.shouldFail {
+		return nil, errors.New("mock AI processing error")
+	}
+
+	if m.sentimentResult != nil {
+		return m.sentimentResult, nil
+	}
+
+	// Default successful response
+	return &models.SentimentResult{
+		Score:       0.7,
+		Label:       "positive",
+		Confidence:  0.85,
+		ProcessedAt: time.Now(),
+	}, nil
+}
 
 func TestJournalHandlers(t *testing.T) {
 	// Setup
 	store := storage.NewMemoryStore()
-	handler := handlers.NewJournalHandler(store)
+	mockAI := &mockAIProcessor{
+		sentimentResult: &models.SentimentResult{
+			Score:       0.8,
+			Label:       "positive",
+			Confidence:  0.9,
+			ProcessedAt: time.Now(),
+		},
+	}
+	aiWorker := worker.NewInMemoryWorker(mockAI)
+	handler := handlers.NewJournalHandler(store, aiWorker)
 
 	t.Run("CreateJournal", func(t *testing.T) {
 		createReq := models.CreateJournalRequest{
@@ -53,6 +90,34 @@ func TestJournalHandlers(t *testing.T) {
 
 		if journal.Content != createReq.Content {
 			t.Errorf("Expected content '%s', got '%s'", createReq.Content, journal.Content)
+		}
+
+		// Check that AI processing was performed
+		if journal.ProcessingResult == nil {
+			t.Error("Expected processing result to be set")
+		} else {
+			if journal.ProcessingResult.Status != models.ProcessingStatusCompleted {
+				t.Errorf("Expected processing status to be completed, got %v", journal.ProcessingResult.Status)
+			}
+
+			if journal.ProcessingResult.SentimentResult == nil {
+				t.Error("Expected sentiment result to be set")
+			} else {
+				if journal.ProcessingResult.SentimentResult.Score != 0.8 {
+					t.Errorf("Expected sentiment score 0.8, got %v", journal.ProcessingResult.SentimentResult.Score)
+				}
+				if journal.ProcessingResult.SentimentResult.Label != "positive" {
+					t.Errorf("Expected sentiment label 'positive', got %v", journal.ProcessingResult.SentimentResult.Label)
+				}
+			}
+
+			if journal.ProcessingResult.ProcessedAt == nil {
+				t.Error("Expected processed_at to be set")
+			}
+
+			if journal.ProcessingResult.ProcessingTime == nil {
+				t.Error("Expected processing_time to be set")
+			}
 		}
 	})
 
@@ -170,6 +235,96 @@ func TestJournalHandlers(t *testing.T) {
 
 		if w.Code != http.StatusMethodNotAllowed {
 			t.Errorf("Expected status code %d for DELETE method, got %d", http.StatusMethodNotAllowed, w.Code)
+		}
+	})
+
+	t.Run("CreateJournalWithAIProcessingFailure", func(t *testing.T) {
+		// Setup handler with failing AI processor
+		failingMockAI := &mockAIProcessor{
+			shouldFail: true,
+		}
+		failingWorker := worker.NewInMemoryWorker(failingMockAI)
+		failingHandler := handlers.NewJournalHandler(store, failingWorker)
+
+		createReq := models.CreateJournalRequest{
+			Content: "This journal will have AI processing failure.",
+		}
+
+		jsonData, err := json.Marshal(createReq)
+		if err != nil {
+			t.Fatalf("Failed to marshal request: %v", err)
+		}
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/journals", bytes.NewBuffer(jsonData))
+		req.Header.Set("Content-Type", "application/json")
+
+		failingHandler.ServeHTTP(w, req)
+
+		// Journal creation should still succeed even if AI processing fails
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status code %d, got %d", http.StatusCreated, w.Code)
+		}
+
+		var journal models.Journal
+		if err := json.NewDecoder(w.Body).Decode(&journal); err != nil {
+			t.Fatalf("Failed to decode response: %v", err)
+		}
+
+		// Check that processing result shows failure but journal is still created
+		if journal.ProcessingResult == nil {
+			t.Error("Expected processing result to be set")
+		} else {
+			if journal.ProcessingResult.Status != models.ProcessingStatusFailed {
+				t.Errorf("Expected processing status to be failed, got %v", journal.ProcessingResult.Status)
+			}
+
+			if journal.ProcessingResult.Error == "" {
+				t.Error("Expected error message to be set")
+			}
+
+			if journal.ProcessingResult.SentimentResult != nil {
+				t.Error("Expected sentiment result to be nil on failure")
+			}
+		}
+
+		// Journal content should still be preserved
+		if journal.Content != createReq.Content {
+			t.Errorf("Expected content '%s', got '%s'", createReq.Content, journal.Content)
+		}
+	})
+
+	t.Run("CreateJournalWithoutWorker", func(t *testing.T) {
+		// Setup handler without worker (nil worker)
+		handlerWithoutWorker := handlers.NewJournalHandler(store, nil)
+
+		createReq := models.CreateJournalRequest{
+			Content: "This journal will not have AI processing.",
+		}
+
+		jsonData, err := json.Marshal(createReq)
+		if err != nil {
+			t.Fatalf("Failed to marshal request: %v", err)
+		}
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/journals", bytes.NewBuffer(jsonData))
+		req.Header.Set("Content-Type", "application/json")
+
+		handlerWithoutWorker.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status code %d, got %d", http.StatusCreated, w.Code)
+		}
+
+		var journal models.Journal
+		if err := json.NewDecoder(w.Body).Decode(&journal); err != nil {
+			t.Fatalf("Failed to decode response: %v", err)
+		}
+
+		// Should not have processing result when no worker is available
+		if journal.ProcessingResult != nil {
+			t.Error("Expected processing result to be nil when no worker is available")
 		}
 	})
 }

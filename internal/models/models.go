@@ -4,14 +4,33 @@ import (
 	"time"
 )
 
+// ProcessingStatus represents the status of AI processing
+type ProcessingStatus string
+
+const (
+	ProcessingStatusPending   ProcessingStatus = "pending"
+	ProcessingStatusCompleted ProcessingStatus = "completed"
+	ProcessingStatusFailed    ProcessingStatus = "failed"
+)
+
+// ProcessingResult contains the results of AI processing for a journal entry
+type ProcessingResult struct {
+	Status          ProcessingStatus `json:"status"`
+	SentimentResult *SentimentResult `json:"sentiment_result,omitempty"`
+	ProcessedAt     *time.Time       `json:"processed_at,omitempty"`
+	ProcessingTime  *time.Duration   `json:"processing_time,omitempty"`
+	Error           string           `json:"error,omitempty"`
+}
+
 // Journal represents a journal entry in the system
 type Journal struct {
-	ID        string         `json:"id"`
-	Content   string         `json:"content"`
-	Timestamp time.Time      `json:"timestamp"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	Metadata  map[string]any `json:"metadata,omitempty"`
+	ID               string            `json:"id"`
+	Content          string            `json:"content"`
+	Timestamp        time.Time         `json:"timestamp"`
+	CreatedAt        time.Time         `json:"created_at"`
+	UpdatedAt        time.Time         `json:"updated_at"`
+	Metadata         map[string]any    `json:"metadata,omitempty"`
+	ProcessingResult *ProcessingResult `json:"processing_result,omitempty"`
 }
 
 // CreateJournalRequest represents the request body for creating a journal
