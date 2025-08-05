@@ -534,7 +534,7 @@ func validateQueryParams(params any) error {
         v = v.Elem()
     }
 
-    for i := 0; i < v.NumField(); i++ {
+    for range v.NumField() {
         field := v.Field(i)
         fieldType := v.Type().Field(i)
 
