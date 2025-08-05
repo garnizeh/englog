@@ -205,7 +205,7 @@ func TestConcurrentUserCreation(t *testing.T) {
     results := make(chan error, 10)
 
     // Try to create the same user concurrently
-    for i := 0; i < 10; i++ {
+    for range 10 {
         wg.Add(1)
         go func() {
             defer wg.Done()
@@ -825,7 +825,7 @@ func BenchmarkUserRepository_GetUserByID(b *testing.B) {
 
     // Pre-populate with test data
     userIDs := make([]string, 1000)
-    for i := 0; i < 1000; i++ {
+    for range 1000 {
         user, _ := repo.CreateUser(context.Background(), User{
             Email: fmt.Sprintf("bench%d@example.com", i),
             Name:  fmt.Sprintf("Benchmark User %d", i),
@@ -836,7 +836,7 @@ func BenchmarkUserRepository_GetUserByID(b *testing.B) {
     b.ResetTimer()
 
     b.RunParallel(func(pb *testing.PB) {
-        for pb.Next() {
+        for b.Loop() {
             userID := userIDs[rand.Intn(len(userIDs))]
             _, err := repo.GetUserByID(context.Background(), userID)
             if err != nil {
@@ -860,7 +860,7 @@ func BenchmarkJournalSearch_FullText(b *testing.B) {
         // ... more realistic content
     }
 
-    for i := 0; i < 10000; i++ {
+    for range 10000 {
         content := contents[rand.Intn(len(contents))]
         repo.CreateJournal(context.Background(), Journal{
             UserID:  userID,
@@ -873,7 +873,7 @@ func BenchmarkJournalSearch_FullText(b *testing.B) {
 
     b.ResetTimer()
 
-    for i := 0; i < b.N; i++ {
+    for b.Loop() {
         term := searchTerms[rand.Intn(len(searchTerms))]
         _, err := repo.SearchJournals(context.Background(), userID, term, 20, 0)
         if err != nil {
@@ -893,7 +893,7 @@ func BenchmarkAIProcessor_ProcessLargeEntry(b *testing.B) {
 
     b.ResetTimer()
 
-    for i := 0; i < b.N; i++ {
+    for b.Loop() {
         runtime.GC()
         runtime.ReadMemStats(&memBefore)
 
@@ -1000,7 +1000,7 @@ func TestSecurityVulnerabilities(t *testing.T) {
         // Test rate limiting by making many requests quickly
         var statusCodes []int
 
-        for i := 0; i < 100; i++ {
+        for range 100 {
             resp, err := http.Get(server.URL + "/api/health")
             require.NoError(t, err)
             statusCodes = append(statusCodes, resp.StatusCode)
@@ -1068,7 +1068,7 @@ func (f *UserFactory) CreateWithJournals(journalCount int) (*User, []*Journal) {
     journalFactory := NewJournalFactory(f.db)
     var journals []*Journal
 
-    for i := 0; i < journalCount; i++ {
+    for i := range journalCount {
         journal := journalFactory.Create(func(j *Journal) {
             j.UserID = user.ID
             j.Content = fmt.Sprintf("Journal entry %d content", i+1)

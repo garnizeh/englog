@@ -10,15 +10,20 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/garnizeh/englog/internal/ai"
 	"github.com/garnizeh/englog/internal/handlers"
 	"github.com/garnizeh/englog/internal/storage"
 )
 
 const (
-	defaultPort = "8080"
+	defaultPort      = "8080"
+	defaultModelName = "deepseek-r1:1.5b"
+	defaultOllamaURL = "http://localhost:11434"
 )
 
 func main() {
+	ctx := context.Background()
+
 	// Setup structured logging
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
@@ -28,9 +33,27 @@ func main() {
 	// Initialize in-memory storage
 	store := storage.NewMemoryStore()
 
+	// Get ollama model name from environment or use default
+	modelName := os.Getenv("OLLAMA_MODEL_NAME")
+	if modelName == "" {
+		modelName = defaultModelName
+	}
+
+	// Get ollama server URL from environment or use default
+	ollamaURL := os.Getenv("OLLAMA_SERVER_URL")
+	if ollamaURL == "" {
+		ollamaURL = defaultOllamaURL
+	}
+
 	// Initialize handlers
 	healthHandler := handlers.NewHealthHandler(store)
 	journalHandler := handlers.NewJournalHandler(store)
+	aiService, err := ai.NewService(ctx, modelName, ollamaURL)
+	if err != nil {
+		slog.Error("Failed to create AI service", "error", err)
+		os.Exit(1)
+	}
+	aiHandler := handlers.NewAIHandler(store, aiService)
 
 	// Setup HTTP server and routes
 	mux := http.NewServeMux()
@@ -39,6 +62,12 @@ func main() {
 	mux.Handle("/health", loggingMiddleware(healthHandler))
 	mux.Handle("/journals", loggingMiddleware(journalHandler))
 	mux.Handle("/journals/", loggingMiddleware(journalHandler)) // For /journals/{id} paths
+
+	// AI endpoints
+	mux.Handle("/ai/analyze-sentiment", loggingMiddleware(aiHandler))
+	mux.Handle("/ai/generate-journal", loggingMiddleware(aiHandler))
+	mux.Handle("/ai/health", loggingMiddleware(aiHandler))
+
 	mux.Handle("/", loggingMiddleware(http.HandlerFunc(defaultHandler)))
 
 	// Get port from environment or use default
@@ -51,8 +80,8 @@ func main() {
 		Addr:         ":" + port,
 		Handler:      mux,
 		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  120 * time.Second,
+		WriteTimeout: 300 * time.Second,
+		IdleTimeout:  600 * time.Second,
 	}
 
 	// Channel to listen for interrupt signals
@@ -63,8 +92,9 @@ func main() {
 	go func() {
 		slog.Info("Starting EngLog API server",
 			"port", port,
-			"version", "prototype-002",
-			"storage", "memory")
+			"version", "prototype-003",
+			"storage", "memory",
+			"ai_integration", "ollama")
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			slog.Error("Server failed to start", "error", err)

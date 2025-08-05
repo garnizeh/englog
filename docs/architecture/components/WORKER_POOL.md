@@ -744,7 +744,7 @@ func ScaleWorkers(targetCount int) error {
 
     if targetCount > currentCount {
         // Scale up: Deploy new worker instances
-        for i := 0; i < (targetCount - currentCount); i++ {
+        for range (targetCount - currentCount) {
             deployWorkerInstance()
         }
     } else if targetCount < currentCount {
