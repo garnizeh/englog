@@ -1,0 +1,61 @@
+meta {
+  name: System Status Check
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/status
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status check returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response contains required fields", function() {
+    const body = res.getBody();
+    expect(body).to.have.property('status');
+    expect(body).to.have.property('timestamp');
+    expect(body).to.have.property('service');
+    expect(body).to.have.property('version');
+    expect(body).to.have.property('uptime_seconds');
+    expect(body).to.have.property('uptime_human');
+    expect(body).to.have.property('memory');
+    expect(body).to.have.property('storage');
+    expect(body).to.have.property('response_time_ms');
+  });
+
+  test("Memory statistics are present", function() {
+    const body = res.getBody();
+    expect(body.memory).to.have.property('allocated_bytes');
+    expect(body.memory).to.have.property('allocated_mb');
+    expect(body.memory).to.have.property('total_allocated_bytes');
+    expect(body.memory).to.have.property('total_allocated_mb');
+    expect(body.memory).to.have.property('heap_objects');
+    expect(body.memory).to.have.property('gc_cycles');
+  });
+
+  test("Storage statistics are present", function() {
+    const body = res.getBody();
+    expect(body.storage).to.have.property('type');
+    expect(body.storage).to.have.property('journal_count');
+    expect(body.storage).to.have.property('processed_count');
+    expect(body.storage).to.have.property('avg_processing_time_ms');
+    expect(body.storage.type).to.equal('memory');
+  });
+
+  test("Uptime is positive", function() {
+    const body = res.getBody();
+    expect(body.uptime_seconds).to.be.a('number');
+    expect(body.uptime_seconds).to.be.above(0);
+  });
+
+  test("Memory allocation is positive", function() {
+    const body = res.getBody();
+    expect(body.memory.allocated_bytes).to.be.a('number');
+    expect(body.memory.allocated_bytes).to.be.above(0);
+  });
+}

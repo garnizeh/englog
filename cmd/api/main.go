@@ -55,15 +55,15 @@ func main() {
 		"log_format":  os.Getenv("LOG_FORMAT"),
 	})
 
-	// Initialize handlers
-	healthHandler := handlers.NewHealthHandler(store, logger)
-
 	// Initialize AI service
 	aiService, err := ai.NewService(ctx, modelName, ollamaURL, logger)
 	if err != nil {
 		logger.Error("Failed to create AI service", "error", err)
 		os.Exit(1)
 	}
+
+	// Initialize handlers
+	healthHandler := handlers.NewHealthHandler(store, aiService, logger)
 
 	// Initialize AI worker for synchronous processing
 	aiWorker := worker.NewInMemoryWorker(aiService, logger)
@@ -89,6 +89,8 @@ func main() {
 
 	// Add routes without the old middleware (new middleware handles all requests)
 	mux.Handle("/health", healthHandler)
+	mux.Handle("/status", healthHandler)
+	mux.Handle("/status/", healthHandler) // For all /status/* paths
 	mux.Handle("/journals", journalHandler)
 	mux.Handle("/journals/", journalHandler) // For /journals/{id} paths
 
