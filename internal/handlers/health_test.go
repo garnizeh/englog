@@ -1,4 +1,4 @@
-package handlers
+package handlers_test
 
 import (
 	"encoding/json"
@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/garnizeh/englog/internal/handlers"
 	"github.com/garnizeh/englog/internal/models"
 	"github.com/garnizeh/englog/internal/storage"
 )
@@ -74,7 +75,7 @@ func TestHealthHandler_ServeHTTP(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup test store
 			testStore := storage.NewMemoryStore()
-			testHandler := NewHealthHandler(testStore)
+			testHandler := handlers.NewHealthHandler(testStore, Logger())
 
 			if tt.setupData != nil {
 				tt.setupData(testStore)
@@ -131,8 +132,8 @@ func TestHealthHandler_ServeHTTP(t *testing.T) {
 				}
 
 				// Validate version field
-				if version, ok := response["version"].(string); !ok || version != "prototype-001" {
-					t.Errorf("Expected version 'prototype-001', got: %v", response["version"])
+				if version, ok := response["version"].(string); !ok || version != "prototype-006" {
+					t.Errorf("Expected version 'prototype-006', got: %v", response["version"])
 				}
 
 				// Validate timestamp field
@@ -180,7 +181,7 @@ func TestHealthHandler_ServeHTTP(t *testing.T) {
 func TestHealthHandler_ResponseStructure(t *testing.T) {
 	// Test response structure with various store states
 	store := storage.NewMemoryStore()
-	handler := NewHealthHandler(store)
+	handler := handlers.NewHealthHandler(store, Logger())
 
 	// Test with empty store
 	t.Run("empty store", func(t *testing.T) {
@@ -228,7 +229,7 @@ func TestHealthHandler_ResponseStructure(t *testing.T) {
 func TestHealthHandler_ConcurrentRequests(t *testing.T) {
 	// Test handler behavior under concurrent requests
 	store := storage.NewMemoryStore()
-	handler := NewHealthHandler(store)
+	handler := handlers.NewHealthHandler(store, Logger())
 
 	// Add some test data
 	for i := 0; i < 10; i++ {
@@ -278,21 +279,17 @@ func TestHealthHandler_ConcurrentRequests(t *testing.T) {
 func TestHealthHandler_NewHealthHandler(t *testing.T) {
 	// Test handler creation
 	store := storage.NewMemoryStore()
-	handler := NewHealthHandler(store)
+	handler := handlers.NewHealthHandler(store, Logger())
 
 	if handler == nil {
 		t.Fatal("NewHealthHandler returned nil")
-	}
-
-	if handler.store != store {
-		t.Error("Handler store not properly assigned")
 	}
 }
 
 // Benchmark test for health endpoint performance
 func BenchmarkHealthHandler_ServeHTTP(b *testing.B) {
 	store := storage.NewMemoryStore()
-	handler := NewHealthHandler(store)
+	handler := handlers.NewHealthHandler(store, Logger())
 
 	// Add some test data
 	for i := 0; i < 100; i++ {

@@ -19,6 +19,7 @@ englog-api
 # Build directory
 bin/
 dist/
+cmd/dev/
 
 # Dependency directories
 # vendor/

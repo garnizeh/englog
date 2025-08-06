@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/garnizeh/englog/internal/ai"
+	"github.com/garnizeh/englog/internal/logging"
 	"github.com/garnizeh/englog/internal/models"
 	"github.com/garnizeh/englog/internal/storage"
 )
@@ -14,15 +15,16 @@ import (
 // AIHandler handles AI-related requests
 type AIHandler struct {
 	store     *storage.MemoryStore
-	aiService *ai.Service
+	aiService ai.AIService
+	logger    *logging.Logger
 }
 
 // NewAIHandler creates a new AI handler
-func NewAIHandler(store *storage.MemoryStore, aiService *ai.Service) *AIHandler {
-
+func NewAIHandler(store *storage.MemoryStore, aiService ai.AIService, logger *logging.Logger) *AIHandler {
 	return &AIHandler{
 		aiService: aiService,
 		store:     store,
+		logger:    logger,
 	}
 }
 

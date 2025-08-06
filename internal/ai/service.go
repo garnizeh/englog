@@ -3,22 +3,34 @@ package ai
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/garnizeh/englog/internal/ai/ollama"
+	"github.com/garnizeh/englog/internal/logging"
 	"github.com/garnizeh/englog/internal/models"
 )
+
+// AIService interface defines the methods that any AI service must implement
+type AIService interface {
+	ProcessJournalSentiment(ctx context.Context, journal *models.Journal) (*models.SentimentResult, error)
+	GenerateStructuredJournal(ctx context.Context, req *models.PromptRequest) (*models.GeneratedJournal, error)
+	ValidateJournalContent(content string) error
+	ValidatePromptRequest(req *models.PromptRequest) error
+	HealthCheck(ctx context.Context) error
+}
 
 // Service provides AI processing capabilities
 type Service struct {
 	ollamaClient *ollama.Client
-	logger       *slog.Logger
+	logger       *logging.Logger
 }
 
+// Ensure Service implements AIService interface
+var _ AIService = (*Service)(nil)
+
 // NewService creates a new AI service
-func NewService(ctx context.Context, modelName, baseURL string) (*Service, error) {
+func NewService(ctx context.Context, modelName, baseURL string, logger *logging.Logger) (*Service, error) {
 	ollamaClient, err := ollama.New(ctx, modelName, baseURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Ollama client: %w", err)
@@ -26,7 +38,7 @@ func NewService(ctx context.Context, modelName, baseURL string) (*Service, error
 
 	return &Service{
 		ollamaClient: ollamaClient,
-		logger:       slog.Default().With("component", "ai_service"),
+		logger:       logger,
 	}, nil
 }
 

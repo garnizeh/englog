@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,6 +11,8 @@ import (
 
 	"github.com/garnizeh/englog/internal/ai"
 	"github.com/garnizeh/englog/internal/handlers"
+	"github.com/garnizeh/englog/internal/logging"
+	"github.com/garnizeh/englog/internal/middleware"
 	"github.com/garnizeh/englog/internal/storage"
 	"github.com/garnizeh/englog/internal/worker"
 )
@@ -25,11 +26,8 @@ const (
 func main() {
 	ctx := context.Background()
 
-	// Setup structured logging
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	}))
-	slog.SetDefault(logger)
+	// Setup structured logging from environment
+	logger := logging.NewLoggerFromEnv()
 
 	// Initialize in-memory storage
 	store := storage.NewMemoryStore()
@@ -46,38 +44,60 @@ func main() {
 		ollamaURL = defaultOllamaURL
 	}
 
+	// Log startup configuration
+	logger.LogSystemEvent("application_startup", map[string]any{
+		"version":     "prototype-006",
+		"storage":     "memory",
+		"ai_provider": "ollama",
+		"model_name":  modelName,
+		"ollama_url":  ollamaURL,
+		"log_level":   os.Getenv("LOG_LEVEL"),
+		"log_format":  os.Getenv("LOG_FORMAT"),
+	})
+
 	// Initialize handlers
-	healthHandler := handlers.NewHealthHandler(store)
+	healthHandler := handlers.NewHealthHandler(store, logger)
 
 	// Initialize AI service
-	aiService, err := ai.NewService(ctx, modelName, ollamaURL)
+	aiService, err := ai.NewService(ctx, modelName, ollamaURL, logger)
 	if err != nil {
-		slog.Error("Failed to create AI service", "error", err)
+		logger.Error("Failed to create AI service", "error", err)
 		os.Exit(1)
 	}
 
 	// Initialize AI worker for synchronous processing
-	aiWorker := worker.NewInMemoryWorker(aiService)
+	aiWorker := worker.NewInMemoryWorker(aiService, logger)
 
 	// Initialize journal handler with AI worker
-	journalHandler := handlers.NewJournalHandler(store, aiWorker)
+	journalHandler := handlers.NewJournalHandler(store, aiWorker, logger)
 
-	aiHandler := handlers.NewAIHandler(store, aiService)
+	aiHandler := handlers.NewAIHandler(store, aiService, logger)
 
 	// Setup HTTP server and routes
 	mux := http.NewServeMux()
 
-	// Add middleware for logging and basic error handling
-	mux.Handle("/health", loggingMiddleware(healthHandler))
-	mux.Handle("/journals", loggingMiddleware(journalHandler))
-	mux.Handle("/journals/", loggingMiddleware(journalHandler)) // For /journals/{id} paths
+	// Create middleware instance
+	requestMiddleware := middleware.NewRequestMiddleware(logger)
+
+	// Add comprehensive middleware stack with new logging middleware
+	var handler http.Handler = mux
+
+	// Add our new middleware stack in reverse order (last added = first executed)
+	handler = requestMiddleware.RecoveryMiddleware(handler)
+	handler = requestMiddleware.PerformanceMiddleware(handler)
+	handler = requestMiddleware.LoggingMiddleware(handler)
+
+	// Add routes without the old middleware (new middleware handles all requests)
+	mux.Handle("/health", healthHandler)
+	mux.Handle("/journals", journalHandler)
+	mux.Handle("/journals/", journalHandler) // For /journals/{id} paths
 
 	// AI endpoints
-	mux.Handle("/ai/analyze-sentiment", loggingMiddleware(aiHandler))
-	mux.Handle("/ai/generate-journal", loggingMiddleware(aiHandler))
-	mux.Handle("/ai/health", loggingMiddleware(aiHandler))
+	mux.Handle("/ai/analyze-sentiment", aiHandler)
+	mux.Handle("/ai/generate-journal", aiHandler)
+	mux.Handle("/ai/health", aiHandler)
 
-	mux.Handle("/", loggingMiddleware(http.HandlerFunc(defaultHandler)))
+	mux.Handle("/", http.HandlerFunc(defaultHandler))
 
 	// Get port from environment or use default
 	port := os.Getenv("PORT")
@@ -87,7 +107,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:         ":" + port,
-		Handler:      mux,
+		Handler:      handler, // Use our middleware-wrapped handler
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 300 * time.Second,
 		IdleTimeout:  600 * time.Second,
@@ -99,84 +119,51 @@ func main() {
 
 	// Start server in a goroutine
 	go func() {
-		slog.Info("Starting EngLog API server",
+		logger.WithContext(ctx).Info("Starting EngLog API server",
 			"port", port,
-			"version", "prototype-004",
+			"version", "prototype-006",
 			"storage", "memory",
 			"ai_integration", "ollama",
 			"ollama_model", modelName,
 			"ollama_url", ollamaURL,
-			"features", []string{"synchronous_ai_processing", "sentiment_analysis"})
+			"features", []string{"synchronous_ai_processing", "sentiment_analysis", "structured_logging"})
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("Server failed to start", "error", err)
+			logger.Error("Server failed to start", "error", err)
 			os.Exit(1)
 		}
 	}()
 
-	slog.Info("Server is ready to handle requests", "port", port)
+	logger.WithContext(ctx).Info("Server is ready to handle requests", "port", port)
 
 	// Wait for interrupt signal
 	<-quit
-	slog.Info("Server is shutting down...")
+	logger.WithContext(ctx).Info("Server is shutting down...")
 
 	// Graceful shutdown with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		slog.Error("Server forced to shutdown", "error", err)
+		logger.Error("Server forced to shutdown", "error", err)
 		os.Exit(1)
 	}
 
-	slog.Info("Server stopped gracefully")
-}
-
-// loggingMiddleware adds request logging to handlers
-func loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-
-		// Create a response writer wrapper to capture status code
-		wrapped := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
-
-		// Call the next handler
-		next.ServeHTTP(wrapped, r)
-
-		duration := time.Since(start)
-
-		slog.Info("HTTP request processed",
-			"method", r.Method,
-			"path", r.URL.Path,
-			"status_code", wrapped.statusCode,
-			"duration_ms", duration.Milliseconds(),
-			"remote_addr", r.RemoteAddr,
-			"user_agent", r.Header.Get("User-Agent"))
-	})
-}
-
-// responseWriter wraps http.ResponseWriter to capture status code
-type responseWriter struct {
-	http.ResponseWriter
-	statusCode int
-}
-
-func (rw *responseWriter) WriteHeader(code int) {
-	rw.statusCode = code
-	rw.ResponseWriter.WriteHeader(code)
+	logger.WithContext(ctx).Info("Server stopped gracefully")
 }
 
 // defaultHandler handles requests to unknown endpoints
 func defaultHandler(w http.ResponseWriter, r *http.Request) {
 	response := map[string]any{
 		"message": "EngLog API - Phase 0 (Dev Prototype)",
-		"version": "prototype-004",
+		"version": "prototype-006",
 		"status":  "active",
 		"features": []string{
 			"Journal CRUD operations",
 			"Synchronous AI sentiment analysis",
 			"In-memory storage",
 			"Ollama integration",
+			"Structured logging and observability",
 		},
 		"endpoints": map[string]string{
 			"health":            "/health",
@@ -194,7 +181,7 @@ func defaultHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		slog.Error("Failed to encode default response", "error", err)
+		// Note: logging is handled by middleware, but this is a fallback for encoding errors
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}

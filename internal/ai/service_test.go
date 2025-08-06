@@ -13,6 +13,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/ollama"
 
 	"github.com/garnizeh/englog/internal/ai"
+	"github.com/garnizeh/englog/internal/logging"
 	"github.com/garnizeh/englog/internal/models"
 )
 
@@ -95,7 +96,7 @@ func (s *OllamaTestSuite) GetBaseURL() string {
 func (s *OllamaTestSuite) CreateService(t testing.TB) *ai.Service {
 	t.Helper()
 
-	service, err := ai.NewService(s.ctx, modelName, s.baseURL)
+	service, err := ai.NewService(s.ctx, modelName, s.baseURL, logger())
 	if err != nil {
 		t.Fatalf("Failed to create AI service: %v", err)
 	}
@@ -146,7 +147,7 @@ func (s *OllamaTestSuite) waitForContainer(t *testing.T, timeout time.Duration) 
 
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
-		service, err := ai.NewService(s.ctx, modelName, s.baseURL)
+		service, err := ai.NewService(s.ctx, modelName, s.baseURL, logger())
 		if err == nil {
 			// Try a simple validation operation instead of sentiment analysis
 			// This avoids the model output validation issues during setup
@@ -390,7 +391,7 @@ func TestOllamaIntegration(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				ctx := testSuite.ctx
-				service, err := ai.NewService(ctx, modelName, tt.baseURL)
+				service, err := ai.NewService(ctx, modelName, tt.baseURL, logger())
 
 				if tt.expectError {
 					if err == nil {
@@ -783,7 +784,7 @@ func TestOllamaIntegration(t *testing.T) {
 				ctx, cancel := context.WithTimeout(testSuite.ctx, tt.timeout)
 				defer cancel()
 
-				service, err := ai.NewService(ctx, modelName, testSuite.GetBaseURL())
+				service, err := ai.NewService(ctx, modelName, testSuite.GetBaseURL(), logger())
 
 				if tt.timeout < time.Second {
 					// For very short timeouts, service creation might fail
@@ -885,4 +886,13 @@ func BenchmarkOllamaSentimentAnalysis(b *testing.B) {
 			b.Fatalf("Benchmark failed: %v", err)
 		}
 	}
+}
+
+func logger() *logging.Logger {
+	logConfig := logging.Config{
+		Level:  logging.DebugLevel,
+		Format: "json",
+	}
+
+	return logging.NewLogger(logConfig)
 }

@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/garnizeh/englog/internal/logging"
 	"github.com/garnizeh/englog/internal/models"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/ollama"
@@ -43,6 +45,7 @@ type Client struct {
 	baseURL   string
 	modelName string
 	llm       llms.Model
+	logger    *logging.Logger
 }
 
 // New creates a new Ollama client instance using langchaingo
@@ -54,7 +57,11 @@ func New(ctx context.Context, modelName, baseURL string) (*Client, error) {
 		return nil, fmt.Errorf("ollama base URL cannot be empty")
 	}
 
-	fmt.Printf("Creating new Ollama service with base URL: %s and model: %s\n", baseURL, modelName)
+	logger := logging.NewLoggerFromEnv()
+	logger.Info("Creating new Ollama service",
+		"base_url", baseURL,
+		"model", modelName,
+	)
 
 	// Create langchaingo Ollama LLM instance
 	llm, err := ollama.New(
@@ -62,16 +69,23 @@ func New(ctx context.Context, modelName, baseURL string) (*Client, error) {
 		ollama.WithModel(modelName),
 	)
 	if err != nil {
-		fmt.Printf("Failed to create langchaingo Ollama LLM: %v\n", err)
+		logger.Error("Failed to create langchaingo Ollama LLM",
+			"error", err,
+			"base_url", baseURL,
+			"model", modelName,
+		)
 		return nil, fmt.Errorf("failed to create Ollama LLM: %w", err)
 	}
 
-	fmt.Printf("Successfully created langchaingo Ollama LLM\n")
+	logger.Info("Successfully created langchaingo Ollama LLM",
+		"model", modelName,
+	)
 
 	return &Client{
 		baseURL:   baseURL,
 		modelName: modelName,
 		llm:       llm,
+		logger:    logger,
 	}, nil
 }
 
@@ -79,29 +93,43 @@ func New(ctx context.Context, modelName, baseURL string) (*Client, error) {
 func (c *Client) AnalyzeSentiment(ctx context.Context, content string) (*models.SentimentResult, error) {
 	start := time.Now()
 
+	c.logger.Info("Starting sentiment analysis",
+		"content_length", len(content),
+		"model", c.modelName,
+	)
+
 	prompt := c.buildSentimentPrompt(content)
 
 	response, err := c.callOllamaWithRetry(ctx, prompt, 3)
 	if err != nil {
-		fmt.Printf("Sentiment analysis failed: %v\n", err)
-		fmt.Printf("Duration: %s\n", time.Since(start).String())
+		duration := time.Since(start)
+		c.logger.Error("Sentiment analysis failed",
+			"error", err,
+			"duration", duration,
+			"content_length", len(content),
+		)
 		return nil, fmt.Errorf("sentiment analysis failed: %w", err)
 	}
 
 	result, err := c.parseSentimentResponse(response)
 	if err != nil {
-		fmt.Printf("Failed to parse sentiment response: %v\n", err)
-		fmt.Printf("Response: %s\n", response)
+		c.logger.Error("Failed to parse sentiment response",
+			"error", err,
+			"response", response,
+			"response_length", len(response),
+		)
 		return nil, fmt.Errorf("failed to parse sentiment response: %w", err)
 	}
 
 	result.ProcessedAt = time.Now()
+	duration := time.Since(start)
 
-	fmt.Printf("Sentiment analysis completed\n")
-	fmt.Printf("Duration: %s\n", time.Since(start).String())
-	fmt.Printf("Score: %f\n", result.Score)
-	fmt.Printf("Label: %s\n", result.Label)
-	fmt.Printf("Confidence: %f\n", result.Confidence)
+	c.logger.Info("Sentiment analysis completed",
+		"duration", duration,
+		"score", result.Score,
+		"label", result.Label,
+		"confidence", result.Confidence,
+	)
 
 	return result, nil
 }
@@ -110,29 +138,47 @@ func (c *Client) AnalyzeSentiment(ctx context.Context, content string) (*models.
 func (c *Client) GenerateJournal(ctx context.Context, req *models.PromptRequest) (*models.GeneratedJournal, error) {
 	start := time.Now()
 
+	c.logger.Info("Starting journal generation",
+		"prompt", req.Prompt,
+		"context", req.Context,
+		"model", c.modelName,
+	)
+
 	prompt := c.buildGenerationPrompt(req)
-	fmt.Printf("Journal generation prompt:\n\n%s\n\n", prompt)
+	c.logger.Debug("Journal generation prompt",
+		"full_prompt", prompt,
+	)
 
 	response, err := c.callOllamaWithRetry(ctx, prompt, 3)
 	if err != nil {
-		fmt.Printf("Journal generation failed: %v\n", err)
-		fmt.Printf("Duration: %s\n", time.Since(start).String())
+		duration := time.Since(start)
+		c.logger.Error("Journal generation failed",
+			"error", err,
+			"duration", duration,
+			"prompt", req.Prompt,
+		)
 		return nil, fmt.Errorf("journal generation failed: %w", err)
 	}
 
 	result, err := c.parseGenerationResponse(response)
 	if err != nil {
-		fmt.Printf("Failed to parse generation response: %v\n", err)
-		fmt.Printf("Response: %s\n", response)
+		c.logger.Error("Failed to parse generation response",
+			"error", err,
+			"response", response,
+			"response_length", len(response),
+		)
 		return nil, fmt.Errorf("failed to parse generation response: %w", err)
 	}
 
 	result.GeneratedAt = time.Now()
+	duration := time.Since(start)
 
-	fmt.Printf("Journal generation completed\n")
-	fmt.Printf("Duration: %s\n", time.Since(start).String())
-	fmt.Printf("Content Length: %d\n", len(result.Content))
-	fmt.Printf("Themes Count: %d\n", len(result.Metadata.Themes))
+	c.logger.Info("Journal generation completed",
+		"duration", duration,
+		"content_length", len(result.Content),
+		"themes_count", len(result.Metadata.Themes),
+		"tags_count", len(result.Metadata.Tags),
+	)
 
 	return result, nil
 }
@@ -151,15 +197,27 @@ func (c *Client) callOllamaWithRetry(ctx context.Context, prompt string, maxRetr
 
 		response, err := c.callOllama(ctx, prompt)
 		if err == nil {
+			c.logger.Debug("Ollama call succeeded",
+				"attempt", attempt,
+				"max_retries", maxRetries,
+			)
 			return response, nil
 		}
 
 		lastErr = err
-		fmt.Printf("Ollama call failed, retrying (attempt %d/%d): %v\n", attempt, maxRetries, err)
+		c.logger.Warn("Ollama call failed, retrying",
+			"attempt", attempt,
+			"max_retries", maxRetries,
+			"error", err,
+		)
 
 		if attempt < maxRetries {
 			// Exponential backoff respecting the context
 			backoff := time.Duration(attempt) * time.Second
+			c.logger.Debug("Backing off before retry",
+				"backoff_duration", backoff,
+				"attempt", attempt,
+			)
 			timer := time.NewTimer(backoff)
 			select {
 			case <-ctx.Done():
@@ -171,6 +229,10 @@ func (c *Client) callOllamaWithRetry(ctx context.Context, prompt string, maxRetr
 		}
 	}
 
+	c.logger.Error("Ollama call failed after all retries",
+		"max_retries", maxRetries,
+		"final_error", lastErr,
+	)
 	return "", fmt.Errorf("ollama call failed after %d attempts: %w", maxRetries, lastErr)
 }
 
@@ -180,15 +242,26 @@ func (c *Client) callOllama(ctx context.Context, prompt string) (string, error) 
 	timeoutCtx, cancel := context.WithTimeout(ctx, 300*time.Second)
 	defer cancel()
 
+	c.logger.Debug("Calling Ollama API",
+		"model", c.modelName,
+		"timeout", "300s",
+		"prompt_length", len(prompt),
+	)
+
 	// Use langchaingo GenerateFromSinglePrompt method
 	response, err := llms.GenerateFromSinglePrompt(timeoutCtx, c.llm, prompt)
 	if err != nil {
-		fmt.Printf("Failed to call Ollama API: %v\n", err)
+		c.logger.Error("Failed to call Ollama API",
+			"error", err,
+			"model", c.modelName,
+		)
 		return "", fmt.Errorf("failed to call Ollama API: %w", err)
 	}
 
-	fmt.Printf("Successfully called Ollama API\n")
-	fmt.Printf("Response len: %d\n", len(response))
+	c.logger.Debug("Successfully called Ollama API",
+		"response_length", len(response),
+		"model", c.modelName,
+	)
 
 	return response, nil
 }
@@ -295,8 +368,10 @@ func (c *Client) parseGenerationResponse(response string) (*models.GeneratedJour
 
 // HealthCheck performs a health check on the AI client using a simple prompt
 func (c *Client) HealthCheck(ctx context.Context) error {
-	fmt.Printf("Performing AI client health check with langchaingo\n")
-	fmt.Printf("Model: %s\n", c.modelName)
+	c.logger.Info("Performing AI client health check",
+		"model", c.modelName,
+		"base_url", c.baseURL,
+	)
 
 	// Create a shorter timeout for health checks
 	healthCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
@@ -310,24 +385,28 @@ func (c *Client) HealthCheck(ctx context.Context) error {
 	duration := time.Since(start)
 
 	if err != nil {
-		fmt.Printf("Health check failed: %v\n", err)
-		fmt.Printf("Duration: %s\n", duration.String())
-		fmt.Printf("Model: %s\n", c.modelName)
+		c.logger.Error("Health check failed",
+			"error", err,
+			"duration", duration,
+			"model", c.modelName,
+		)
 		return fmt.Errorf("health check failed: %w", err)
 	}
 
 	// Check if we got any response
 	if len(response) == 0 {
-		fmt.Printf("Health check failed: empty response\n")
-		fmt.Printf("Duration: %s\n", duration.String())
-		fmt.Printf("Model: %s\n", c.modelName)
+		c.logger.Error("Health check failed: empty response",
+			"duration", duration,
+			"model", c.modelName,
+		)
 		return fmt.Errorf("health check failed: empty response from LLM")
 	}
 
-	fmt.Printf("AI client health check passed\n")
-	fmt.Printf("Duration: %s\n", duration.String())
-	fmt.Printf("Response Length: %d\n", len(response))
-	fmt.Printf("Model: %s\n", c.modelName)
+	c.logger.Info("AI client health check passed",
+		"duration", duration,
+		"response_length", len(response),
+		"model", c.modelName,
+	)
 
 	return nil
 }
@@ -370,58 +449,65 @@ func cleanJSONResponse(response string) string {
 func fixMalformedJSON(jsonStr string) string {
 	// First, handle the nested JSON string in content field
 	// Pattern: "content": "{\"key\": \"value\"}" -> "content": "escaped content"
-	contentRegex := regexp.MustCompile(`"content":\s*"(\{[^}]*\})"`)
-	jsonStr = contentRegex.ReplaceAllStringFunc(jsonStr, func(match string) string {
-		// Extract the JSON string content
-		parts := strings.SplitN(match, `":{`, 2)
+
+	// Handle trailing commas before closing braces/brackets
+	re := regexp.MustCompile(`,(\s*[}\]])`)
+	jsonStr = re.ReplaceAllString(jsonStr, "$1")
+
+	// Handle missing quotes around string values
+	re = regexp.MustCompile(`:\s*([^"{\[\]\s,}]+)(\s*[,}])`)
+	jsonStr = re.ReplaceAllStringFunc(jsonStr, func(match string) string {
+		// Don't quote numeric values or booleans
+		parts := strings.SplitN(match, ":", 2)
 		if len(parts) == 2 {
-			// Replace with plain text content
-			return `"content": "Today was a highly productive day at work. I collaborated effectively with my team and made significant progress on our software development project."`
+			value := strings.TrimSpace(parts[1])
+			ending := ""
+			if strings.HasSuffix(value, ",") {
+				ending = ","
+				value = strings.TrimSuffix(value, ",")
+			} else if strings.HasSuffix(value, "}") {
+				ending = "}"
+				value = strings.TrimSuffix(value, "}")
+			}
+			value = strings.TrimSpace(value)
+
+			// Check if it's a number, boolean, or null
+			if isNumeric(value) || value == "true" || value == "false" || value == "null" {
+				return parts[0] + ": " + value + ending
+			}
+			// Quote string values
+			return parts[0] + ": \"" + strings.ReplaceAll(value, "\"", "\\\"") + "\"" + ending
 		}
 		return match
 	})
 
-	// Fix escaped quotes in arrays: ["\"item1\", \"item2\"] -> ["item1", "item2"]
-	arrayRegex := regexp.MustCompile(`\[\s*"\\?"([^"\\]*)"\\?",?\s*"\\?"([^"\\]*)"\\?",?\s*"\\?"([^"\\]*)"\\?"?\s*\]`)
-	jsonStr = arrayRegex.ReplaceAllString(jsonStr, `["$1", "$2", "$3"]`)
+	// Fix duplicate colons
+	re = regexp.MustCompile(`::`)
+	jsonStr = re.ReplaceAllString(jsonStr, ":")
 
-	// Fix individual escaped quotes in string values: "\"text\"" -> "text"
-	escapedQuoteRegex := regexp.MustCompile(`"\\\"([^"]*)\\\""`)
-	jsonStr = escapedQuoteRegex.ReplaceAllString(jsonStr, `"$1"`)
-
-	// Fix malformed key names with extra quotes: "key\": -> "key":
-	keyRegex := regexp.MustCompile(`"([^"]+)\\?":\s*`)
-	jsonStr = keyRegex.ReplaceAllString(jsonStr, `"$1": `)
-
-	// Fix arrays with extra escaping: ["\"text\", -> ["text",
-	simpleArrayRegex := regexp.MustCompile(`\[\s*"\\?"([^"\\,]+)"\\?"(?:,\s*"\\?"([^"\\,]+)"\\?")*\s*\]`)
-	jsonStr = simpleArrayRegex.ReplaceAllStringFunc(jsonStr, func(match string) string {
-		// Extract items and rebuild array
-		itemRegex := regexp.MustCompile(`"\\?"([^"\\,]+)"\\?"`)
-		items := itemRegex.FindAllStringSubmatch(match, -1)
-		var cleanItems []string
-		for _, item := range items {
-			if len(item) > 1 {
-				cleanItems = append(cleanItems, `"`+strings.TrimSpace(item[1])+`"`)
+	// Handle escaped quotes in metadata field
+	if strings.Contains(jsonStr, `"metadata"`) {
+		// Find the metadata value and escape it properly
+		re = regexp.MustCompile(`"metadata":\s*"([^"]*(?:\\"[^"]*)*)"`)
+		jsonStr = re.ReplaceAllStringFunc(jsonStr, func(match string) string {
+			// Extract the content between quotes
+			parts := strings.SplitN(match, `"metadata":`, 2)
+			if len(parts) == 2 {
+				content := strings.TrimSpace(parts[1])
+				content = strings.Trim(content, `"`)
+				// Escape internal quotes
+				content = strings.ReplaceAll(content, `"`, `\"`)
+				return `"metadata": "` + content + `"`
 			}
-		}
-		return "[" + strings.Join(cleanItems, ", ") + "]"
-	})
-
-	// Fix double commas: ,, -> ,
-	jsonStr = strings.ReplaceAll(jsonStr, ",,", ",")
-
-	// Fix trailing commas in arrays: ["item",] -> ["item"]
-	trailingArrayComma := regexp.MustCompile(`,\s*\]`)
-	jsonStr = trailingArrayComma.ReplaceAllString(jsonStr, "]")
-
-	// Fix trailing commas in objects: {"key": "value",} -> {"key": "value"}
-	trailingObjectComma := regexp.MustCompile(`,\s*\}`)
-	jsonStr = trailingObjectComma.ReplaceAllString(jsonStr, "}")
-
-	// Fix quotes around values that should be strings
-	valueQuoteRegex := regexp.MustCompile(`":\s*"\\?"([^"\\]*)"\\?"`)
-	jsonStr = valueQuoteRegex.ReplaceAllString(jsonStr, `": "$1"`)
+			return match
+		})
+	}
 
 	return jsonStr
+}
+
+// isNumeric checks if a string represents a numeric value
+func isNumeric(s string) bool {
+	_, err := strconv.ParseFloat(s, 64)
+	return err == nil
 }

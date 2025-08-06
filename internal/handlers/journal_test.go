@@ -51,8 +51,8 @@ func TestJournalHandlers(t *testing.T) {
 			ProcessedAt: time.Now(),
 		},
 	}
-	aiWorker := worker.NewInMemoryWorker(mockAI)
-	handler := handlers.NewJournalHandler(store, aiWorker)
+	aiWorker := worker.NewInMemoryWorker(mockAI, Logger())
+	handler := handlers.NewJournalHandler(store, aiWorker, Logger())
 
 	t.Run("CreateJournal", func(t *testing.T) {
 		createReq := models.CreateJournalRequest{
@@ -243,8 +243,8 @@ func TestJournalHandlers(t *testing.T) {
 		failingMockAI := &mockAIProcessor{
 			shouldFail: true,
 		}
-		failingWorker := worker.NewInMemoryWorker(failingMockAI)
-		failingHandler := handlers.NewJournalHandler(store, failingWorker)
+		failingWorker := worker.NewInMemoryWorker(failingMockAI, Logger())
+		failingHandler := handlers.NewJournalHandler(store, failingWorker, Logger())
 
 		createReq := models.CreateJournalRequest{
 			Content: "This journal will have AI processing failure.",
@@ -296,7 +296,7 @@ func TestJournalHandlers(t *testing.T) {
 
 	t.Run("CreateJournalWithoutWorker", func(t *testing.T) {
 		// Setup handler without worker (nil worker)
-		handlerWithoutWorker := handlers.NewJournalHandler(store, nil)
+		handlerWithoutWorker := handlers.NewJournalHandler(store, nil, Logger())
 
 		createReq := models.CreateJournalRequest{
 			Content: "This journal will not have AI processing.",

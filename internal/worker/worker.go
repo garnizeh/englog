@@ -2,9 +2,9 @@ package worker
 
 import (
 	"context"
-	"log/slog"
 	"time"
 
+	"github.com/garnizeh/englog/internal/logging"
 	"github.com/garnizeh/englog/internal/models"
 )
 
@@ -16,14 +16,14 @@ type AIProcessor interface {
 // InMemoryWorker handles synchronous AI processing of journal entries
 type InMemoryWorker struct {
 	aiService AIProcessor
-	logger    *slog.Logger
+	logger    *logging.Logger
 }
 
 // NewInMemoryWorker creates a new in-memory worker instance
-func NewInMemoryWorker(aiService AIProcessor) *InMemoryWorker {
+func NewInMemoryWorker(aiService AIProcessor, logger *logging.Logger) *InMemoryWorker {
 	return &InMemoryWorker{
 		aiService: aiService,
-		logger:    slog.Default().With("component", "in_memory_worker"),
+		logger:    logger,
 	}
 }
 
