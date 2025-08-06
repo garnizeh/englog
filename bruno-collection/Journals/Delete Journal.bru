@@ -1,0 +1,27 @@
+meta {
+  name: Delete Journal
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/journals/550e8400-e29b-41d4-a716-446655440000
+  body: none
+  auth: none
+}
+
+docs {
+  # Delete Journal
+
+  Delete a specific journal entry from the system.
+
+  **Expected Response**: 204 No Content on success, or 404 if not found
+
+  ## Use Case
+  - Remove unwanted journal entries
+  - Clean up test data
+  - Data management
+
+  **Note**: Replace the UUID with an actual journal ID from previous requests
+  **Warning**: This action cannot be undone
+}

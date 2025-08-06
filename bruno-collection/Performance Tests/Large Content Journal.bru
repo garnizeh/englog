@@ -1,0 +1,42 @@
+meta {
+  name: Large Content Journal
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/journals
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "content": "Today I had an incredibly long and eventful day that started early in the morning when I woke up feeling energized and ready to tackle all the challenges ahead. The morning routine went smoothly, and I was able to complete my meditation and exercise before heading to work. At the office, we had several important meetings that required intense focus and collaboration with my team members. The project we've been working on for months is finally coming together, and seeing the progress made me feel really accomplished and proud of what we've achieved. During lunch, I met with a colleague to discuss potential improvements to our workflow, and we came up with some innovative ideas that could significantly enhance our productivity. The afternoon was dedicated to implementing some of the changes we discussed, and I was amazed at how quickly we could adapt and improve our processes. After work, I decided to take a walk in the park to clear my mind and reflect on the day's events. The weather was perfect, with a gentle breeze and beautiful sunset that reminded me of how grateful I am for these simple moments of peace and tranquility. When I got home, I spent quality time with my family, sharing stories about our respective days and enjoying a delicious dinner together. As I'm writing this journal entry, I can't help but feel overwhelmed with gratitude for all the positive experiences and meaningful connections that filled this day.",
+    "metadata": {
+      "mood": 9,
+      "energy_level": 8,
+      "tags": ["productivity", "gratitude", "teamwork", "reflection", "family"],
+      "word_count": 267
+    }
+  }
+}
+
+docs {
+  # Large Content Journal
+
+  Test performance with longer journal entries to measure AI processing time.
+
+  **Expected Response**: 201 Created (may take longer for AI processing)
+
+  ## Use Case
+  - Performance testing with large content
+  - AI processing time measurement
+  - System load testing
+
+  **Note**: Monitor response time for performance analysis
+}

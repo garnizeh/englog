@@ -1,0 +1,34 @@
+meta {
+  name: Create Simple Journal
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/journals
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "content": "Today was a productive day. I managed to complete all my tasks and felt accomplished."
+  }
+}
+
+docs {
+  # Create Simple Journal
+
+  Create a basic diary entry with minimal content.
+
+  **Expected Response**: 201 Created with journal data and AI processing results
+
+  ## Use Case
+  - User creates their first journal entry
+  - Basic sentiment analysis processing
+  - Simple content without metadata
+}

@@ -1,0 +1,24 @@
+meta {
+  name: Get All Journals
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/journals
+  body: none
+  auth: none
+}
+
+docs {
+  # Get All Journals
+
+  Retrieve all journal entries from the system.
+
+  **Expected Response**: 200 OK with array of journal entries
+
+  ## Use Case
+  - View all created journals
+  - Check journal history
+  - Verify data persistence
+}

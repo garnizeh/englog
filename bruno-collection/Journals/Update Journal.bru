@@ -1,0 +1,41 @@
+meta {
+  name: Update Journal
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/journals/550e8400-e29b-41d4-a716-446655440000
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "content": "Updated: Today was a productive day. I managed to complete all my tasks and felt accomplished. Added more reflection on my achievements.",
+    "metadata": {
+      "mood": 8,
+      "tags": ["productivity", "reflection", "growth"],
+      "updated_reason": "Added more details"
+    }
+  }
+}
+
+docs {
+  # Update Journal
+
+  Update an existing journal entry with new content or metadata.
+
+  **Expected Response**: 200 OK with updated journal data and reprocessed AI results
+
+  ## Use Case
+  - Edit journal content
+  - Update metadata
+  - Trigger AI reprocessing
+
+  **Note**: Replace the UUID with an actual journal ID from previous requests
+}

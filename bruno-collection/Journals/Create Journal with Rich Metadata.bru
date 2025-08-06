@@ -1,0 +1,42 @@
+meta {
+  name: Create Journal with Rich Metadata
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/journals
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "content": "Had an amazing day at the beach with family. The weather was perfect, and we built sandcastles together. This reminded me of my childhood summers.",
+    "timestamp": "2025-08-05T14:30:00Z",
+    "metadata": {
+      "mood": 9,
+      "location": "Santa Monica Beach",
+      "tags": ["family", "beach", "memories"],
+      "weather": "sunny",
+      "activity": "leisure"
+    }
+  }
+}
+
+docs {
+  # Create Journal with Rich Metadata
+
+  Create a journal entry with comprehensive metadata for better insights.
+
+  **Expected Response**: 201 Created with enhanced processing results
+
+  ## Use Case
+  - Structured journal entry
+  - Rich metadata for better AI analysis
+  - Custom timestamp and tags
+}

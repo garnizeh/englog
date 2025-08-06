@@ -1,0 +1,34 @@
+meta {
+  name: Empty Content Journal
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/journals
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "content": ""
+  }
+}
+
+docs {
+  # Empty Content Journal
+
+  Test validation for journal entries with empty content.
+
+  **Expected Response**: 400 Bad Request with validation error
+
+  ## Use Case
+  - Test content validation
+  - Verify minimum content requirements
+  - Error handling for empty data
+}

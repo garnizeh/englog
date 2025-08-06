@@ -1,0 +1,36 @@
+meta {
+  name: AI Generate Journal
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/ai/generate-journal
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "prompt": "Write a journal entry about a successful day at work where I completed an important project",
+    "mood": "positive",
+    "length": "medium"
+  }
+}
+
+docs {
+  # AI Generate Journal
+
+  Generate a journal entry using AI based on a prompt and parameters.
+
+  **Expected Response**: 200 OK with generated journal content
+
+  ## Use Case
+  - AI-assisted journal writing
+  - Creative writing support
+  - Content generation testing
+}

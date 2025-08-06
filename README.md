@@ -116,6 +116,66 @@ Current endpoints (Prototype-004):
    curl http://localhost:8080/journals
    ```
 
+### Docker Setup (Optional)
+
+For consistent development environments and easier setup, you can run the entire stack using Docker:
+
+1. **Quick Start with Docker:**
+
+   ```bash
+   # Run the automated setup script
+   ./scripts/docker-setup.sh
+
+   # Or start manually
+   docker-compose up -d
+   ```
+
+2. **Development Mode with Hot Reload:**
+
+   ```bash
+   # Use development configuration
+   ./scripts/docker-setup.sh --dev
+
+   # Or manually
+   docker-compose -f docker-compose.dev.yml up -d
+   ```
+
+3. **Custom Model:**
+
+   ```bash
+   # Use a different Ollama model
+   ./scripts/docker-setup.sh --model llama3.2
+   ```
+
+4. **Docker Services:**
+
+   - **API Server:** http://localhost:8080
+   - **Ollama:** http://localhost:11434
+   - **Health Checks:** Automatic service health monitoring
+
+5. **Docker Commands:**
+
+   ```bash
+   # View logs
+   docker-compose logs -f
+
+   # Stop services
+   docker-compose down
+
+   # Restart API only
+   docker-compose restart api
+
+   # Clean up (removes volumes)
+   docker-compose down -v
+   ```
+
+The Docker setup automatically:
+
+- Downloads and configures Ollama with the specified model
+- Sets up networking between services
+- Configures health checks and proper startup order
+- Provides optional hot-reload for development
+
 ### Configuration
 
 Environment variables:
@@ -123,6 +183,8 @@ Environment variables:
 - `PORT`: Server port (default: 8080)
 - `OLLAMA_SERVER_URL`: Ollama server URL (default: http://localhost:11434)
 - `OLLAMA_MODEL_NAME`: Model to use (default: deepseek-r1:1.5b)
+- `LOG_LEVEL`: Logging level (debug, info, warn, error)
+- `LOG_FORMAT`: Log format (text, json)
 
 ### Running Tests
 
