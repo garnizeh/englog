@@ -104,6 +104,8 @@ func main() {
 			"version", "prototype-004",
 			"storage", "memory",
 			"ai_integration", "ollama",
+			"ollama_model", modelName,
+			"ollama_url", ollamaURL,
 			"features", []string{"synchronous_ai_processing", "sentiment_analysis"})
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {

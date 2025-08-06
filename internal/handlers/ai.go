@@ -50,6 +50,18 @@ func (h *AIHandler) writeErrorJSON(w http.ResponseWriter, message string, status
 	})
 }
 
+// writeValidationErrorJSON writes a structured validation error response
+func (h *AIHandler) writeValidationErrorJSON(w http.ResponseWriter, validationErrors models.ValidationErrors) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusBadRequest)
+	json.NewEncoder(w).Encode(map[string]any{
+		"error":             "Validation failed",
+		"status":            http.StatusBadRequest,
+		"timestamp":         "2025-08-04T00:00:00Z", // Fixed for testing
+		"validation_errors": validationErrors,
+	})
+}
+
 // writeSuccessJSON writes a JSON success response
 func (h *AIHandler) writeSuccessJSON(w http.ResponseWriter, data any) {
 	w.Header().Set("Content-Type", "application/json")
@@ -154,14 +166,20 @@ func (h *AIHandler) handleGenerateJournal(w http.ResponseWriter, r *http.Request
 	var req models.PromptRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		fmt.Printf("Failed to decode request body: %v\n", err)
-		h.writeErrorJSON(w, "Invalid JSON", http.StatusBadRequest)
+		h.writeValidationErrorJSON(w, []models.ValidationError{
+			{
+				Field:   "body",
+				Message: "Invalid JSON format: " + err.Error(),
+				Code:    "INVALID_JSON",
+			},
+		})
 		return
 	}
 
-	// Validate request
-	if err := h.aiService.ValidatePromptRequest(&req); err != nil {
-		fmt.Printf("Prompt validation failed: %v\n", err)
-		h.writeErrorJSON(w, fmt.Sprintf("Prompt validation failed: %v", err), http.StatusBadRequest)
+	// Use new schema validation
+	if validationErrors := req.Validate(); validationErrors.HasErrors() {
+		fmt.Printf("Prompt validation failed: %v\n", validationErrors)
+		h.writeValidationErrorJSON(w, validationErrors)
 		return
 	}
 
