@@ -60,17 +60,26 @@ func (h *JournalHandler) createJournal(w http.ResponseWriter, r *http.Request) {
 	// Parse and validate JSON request body
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		slog.Error("Failed to decode create journal request", "error", err)
-		h.sendErrorResponse(w, "Invalid JSON format", http.StatusBadRequest)
+		h.sendValidationErrorResponse(w, []models.ValidationError{
+			{
+				Field:   "body",
+				Message: "Invalid JSON format: " + err.Error(),
+				Code:    "INVALID_JSON",
+			},
+		})
 		return
 	}
 
-	// Validate required fields
-	if strings.TrimSpace(req.Content) == "" {
-		h.sendErrorResponse(w, "Content field is required and cannot be empty", http.StatusBadRequest)
+	// Validate request using schema validation
+	if validationErrors := req.Validate(); validationErrors.HasErrors() {
+		slog.Warn("Journal creation request failed validation",
+			"errors", validationErrors,
+			"content_length", len(req.Content))
+		h.sendValidationErrorResponse(w, validationErrors)
 		return
 	}
 
-	// Create new journal entry
+	// Create new journal entry with validated and trimmed content
 	now := time.Now()
 	journal := &models.Journal{
 		ID:        uuid.New().String(),
@@ -189,5 +198,24 @@ func (h *JournalHandler) sendErrorResponse(w http.ResponseWriter, message string
 		slog.Error("Failed to encode error response", "error", err)
 		// Fallback to plain text error
 		http.Error(w, message, statusCode)
+	}
+}
+
+// sendValidationErrorResponse sends a structured validation error response
+func (h *JournalHandler) sendValidationErrorResponse(w http.ResponseWriter, validationErrors models.ValidationErrors) {
+	errorResponse := map[string]any{
+		"error":             "Validation failed",
+		"status":            http.StatusBadRequest,
+		"timestamp":         time.Now().UTC(),
+		"validation_errors": validationErrors,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusBadRequest)
+
+	if err := json.NewEncoder(w).Encode(errorResponse); err != nil {
+		slog.Error("Failed to encode validation error response", "error", err)
+		// Fallback to simple error response
+		h.sendErrorResponse(w, "Validation failed", http.StatusBadRequest)
 	}
 }
