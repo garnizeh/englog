@@ -101,3 +101,63 @@ func (ms *MemoryStore) Count() int {
 
 	return len(ms.journals)
 }
+
+// StorageStats represents statistics about stored journals
+type StorageStats struct {
+	TotalJournals       int     `json:"total_journals"`
+	ProcessedJournals   int     `json:"processed_journals"`
+	AvgProcessingTimeMS float64 `json:"avg_processing_time_ms"`
+	OldestJournalAge    string  `json:"oldest_journal_age,omitempty"`
+	NewestJournalAge    string  `json:"newest_journal_age,omitempty"`
+}
+
+// GetStats returns statistics about stored journals
+func (ms *MemoryStore) GetStats() StorageStats {
+	ms.mu.RLock()
+	defer ms.mu.RUnlock()
+
+	stats := StorageStats{
+		TotalJournals: len(ms.journals),
+	}
+
+	if len(ms.journals) == 0 {
+		return stats
+	}
+
+	var processedCount int
+	var totalProcessingTime float64
+	var oldestTime, newestTime time.Time
+
+	for _, journal := range ms.journals {
+		// Check if journal has been processed
+		if journal.ProcessingResult != nil && journal.ProcessingResult.Status == models.ProcessingStatusCompleted {
+			processedCount++
+			if journal.ProcessingResult.ProcessingTime != nil {
+				totalProcessingTime += journal.ProcessingResult.ProcessingTime.Seconds() * 1000 // Convert to milliseconds
+			}
+		}
+
+		// Track oldest and newest journal times
+		if oldestTime.IsZero() || journal.CreatedAt.Before(oldestTime) {
+			oldestTime = journal.CreatedAt
+		}
+		if newestTime.IsZero() || journal.CreatedAt.After(newestTime) {
+			newestTime = journal.CreatedAt
+		}
+	}
+
+	stats.ProcessedJournals = processedCount
+	if processedCount > 0 {
+		stats.AvgProcessingTimeMS = totalProcessingTime / float64(processedCount)
+	}
+
+	now := time.Now()
+	if !oldestTime.IsZero() {
+		stats.OldestJournalAge = now.Sub(oldestTime).String()
+	}
+	if !newestTime.IsZero() {
+		stats.NewestJournalAge = now.Sub(newestTime).String()
+	}
+
+	return stats
+}

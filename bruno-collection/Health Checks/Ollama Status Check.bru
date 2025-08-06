@@ -1,0 +1,54 @@
+meta {
+  name: Ollama Status Check
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/status/ollama
+  body: none
+  auth: none
+}
+
+tests {
+  test("Ollama status check responds", function() {
+    expect([200, 503]).to.include(res.getStatus());
+  });
+
+  test("Response contains required fields", function() {
+    const body = res.getBody();
+    expect(body).to.have.property('status');
+    expect(body).to.have.property('timestamp');
+    expect(body).to.have.property('service');
+    expect(body).to.have.property('connected');
+    expect(body).to.have.property('response_time_ms');
+  });
+
+  test("Service name is correct", function() {
+    const body = res.getBody();
+    expect(body.service).to.equal('ollama-integration');
+  });
+
+  test("Connected field is boolean", function() {
+    const body = res.getBody();
+    expect(body.connected).to.be.a('boolean');
+  });
+
+  test("Response time is measured", function() {
+    const body = res.getBody();
+    expect(body.response_time_ms).to.be.a('number');
+    expect(body.response_time_ms).to.be.at.least(0);
+  });
+
+  test("Status matches connection state", function() {
+    const body = res.getBody();
+    if (body.connected) {
+      expect(body.status).to.equal('healthy');
+      expect(res.getStatus()).to.equal(200);
+    } else {
+      expect(body.status).to.equal('unhealthy');
+      expect(res.getStatus()).to.equal(503);
+      expect(body).to.have.property('error');
+    }
+  });
+}

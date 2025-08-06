@@ -1,0 +1,50 @@
+meta {
+  name: System Health Check
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/health
+  body: none
+  auth: none
+}
+
+tests {
+  test("Health check returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response contains required fields", function() {
+    const body = res.getBody();
+    expect(body).to.have.property('status');
+    expect(body).to.have.property('timestamp');
+    expect(body).to.have.property('service');
+    expect(body).to.have.property('version');
+    expect(body).to.have.property('storage');
+    expect(body).to.have.property('response_time_ms');
+  });
+
+  test("Status is healthy", function() {
+    const body = res.getBody();
+    expect(body.status).to.equal('healthy');
+  });
+
+  test("Service name is correct", function() {
+    const body = res.getBody();
+    expect(body.service).to.equal('englog-api');
+  });
+
+  test("Response time is measured", function() {
+    const body = res.getBody();
+    expect(body.response_time_ms).to.be.a('number');
+    expect(body.response_time_ms).to.be.at.least(0);
+  });
+
+  test("Storage information is present", function() {
+    const body = res.getBody();
+    expect(body.storage).to.have.property('type');
+    expect(body.storage).to.have.property('journal_count');
+    expect(body.storage.type).to.equal('memory');
+  });
+}
