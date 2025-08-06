@@ -1,0 +1,43 @@
+meta {
+  name: Rapid Sequential Requests
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/journals
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "content": "Quick performance test entry #{{$timestamp}}",
+    "metadata": {
+      "test_type": "performance",
+      "sequence": "{{$timestamp}}"
+    }
+  }
+}
+
+docs {
+  # Rapid Sequential Requests
+
+  Test system performance with multiple rapid requests.
+
+  **Expected Response**: 201 Created for each request
+
+  ## Use Case
+  - Stress testing API endpoints
+  - Concurrent request handling
+  - System stability testing
+
+  **Instructions**:
+  1. Run this request multiple times in quick succession
+  2. Monitor response times
+  3. Check for any failures or degradation
+}

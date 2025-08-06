@@ -52,6 +52,38 @@ vet:
 check: fmt vet test
 	@echo "✅ All checks passed!"
 
+## docker-build: Build Docker image
+docker-build:
+	@echo "🐳 Building Docker image..."
+	docker build -t englog:latest .
+	@echo "✅ Docker image built: englog:latest"
+
+## docker-run: Run with Docker Compose (production mode)
+docker-run:
+	@echo "🐳 Starting EngLog with Docker Compose..."
+	./scripts/docker-setup.sh
+
+## docker-dev: Run with Docker Compose (development mode)
+docker-dev:
+	@echo "🐳 Starting EngLog in development mode..."
+	./scripts/docker-setup.sh --dev
+
+## docker-stop: Stop Docker services
+docker-stop:
+	@echo "⏹️  Stopping Docker services..."
+	docker-compose down
+
+## docker-logs: Show Docker logs
+docker-logs:
+	@echo "📋 Docker logs:"
+	docker-compose logs -f
+
+## docker-clean: Clean Docker resources
+docker-clean: docker-stop
+	@echo "🧹 Cleaning Docker resources..."
+	docker-compose down -v
+	docker system prune -f
+
 ## help: Show this help message
 help:
 	@echo "EngLog API - Available Commands:"

@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # Ollama service - AI model server
+  ollama:
+    image: ollama/ollama:latest
+    container_name: englog-ollama-dev
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_dev_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    networks:
+      - englog-dev-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  # API service - Development mode with hot reload
+  api-dev:
+    image: golang:1.24-alpine
+    container_name: englog-api-dev
+    ports:
+      - "8080:8080"
+    working_dir: /app
+    environment:
+      - PORT=8080
+      - OLLAMA_SERVER_URL=http://ollama:11434
+      - OLLAMA_MODEL_NAME=gemma3:1b
+      - LOG_LEVEL=debug
+      - LOG_FORMAT=json
+      - CGO_ENABLED=0
+    depends_on:
+      ollama:
+        condition: service_healthy
+    networks:
+      - englog-dev-network
+    volumes:
+      - .:/app
+      - go_mod_cache:/go/pkg/mod
+    command: >
+      sh -c "
+        apk add --no-cache git ca-certificates curl &&
+        go mod download &&
+        go run ./cmd/api
+      "
+    restart: unless-stopped
+
+volumes:
+  ollama_dev_data:
+    driver: local
+  go_mod_cache:
+    driver: local
+
+networks:
+  englog-dev-network:
+    driver: bridge

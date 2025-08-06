@@ -1,0 +1,24 @@
+meta {
+  name: Basic Health Check
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/health
+  body: none
+  auth: none
+}
+
+docs {
+  # Basic Health Check
+
+  Check if the API is working properly.
+
+  **Expected Response**: 200 OK with system status
+
+  ## Use Case
+  - Verify API availability
+  - Monitor system health
+  - Basic connectivity test
+}

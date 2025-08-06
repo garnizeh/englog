@@ -1,0 +1,26 @@
+meta {
+  name: Get Journal by ID
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/journals/550e8400-e29b-41d4-a716-446655440000
+  body: none
+  auth: none
+}
+
+docs {
+  # Get Journal by ID
+
+  Retrieve a specific journal entry by its ID.
+
+  **Expected Response**: 200 OK with journal data, or 404 if not found
+
+  ## Use Case
+  - View specific journal entry
+  - Verify journal details
+  - Check AI processing results
+
+  **Note**: Replace the UUID with an actual journal ID from previous requests
+}

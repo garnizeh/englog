@@ -1,0 +1,24 @@
+meta {
+  name: AI Health Check
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/ai/health
+  body: none
+  auth: none
+}
+
+docs {
+  # AI Health Check
+
+  Check the health and availability of AI processing services.
+
+  **Expected Response**: 200 OK with AI service status
+
+  ## Use Case
+  - Verify AI service connectivity
+  - Check Ollama model availability
+  - Monitor AI processing capabilities
+}
