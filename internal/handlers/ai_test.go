@@ -26,11 +26,11 @@ func TestAIHandler_ServeHTTP_AnalyzeSentiment(t *testing.T) {
 
 	// Setup test dependencies
 	store := storage.NewMemoryStore()
-	aiService, err := ai.NewService(ctx, modelName, "http://localhost:11434")
+	aiService, err := ai.NewService(ctx, modelName, "http://localhost:11434", Logger())
 	if err != nil || aiService == nil {
 		t.Fatalf("Failed to create AI service: %v", err)
 	}
-	handler := handlers.NewAIHandler(store, aiService)
+	handler := handlers.NewAIHandler(store, aiService, Logger())
 
 	// Create a test journal entry
 	journal := &models.Journal{
@@ -149,11 +149,11 @@ func TestAIHandler_ServeHTTP_GenerateJournal(t *testing.T) {
 
 	// Setup test dependencies
 	store := storage.NewMemoryStore()
-	aiService, err := ai.NewService(ctx, modelName, "http://localhost:11434")
+	aiService, err := ai.NewService(ctx, modelName, "http://localhost:11434", Logger())
 	if err != nil || aiService == nil {
 		t.Fatalf("Failed to create AI service: %v", err)
 	}
-	handler := handlers.NewAIHandler(store, aiService)
+	handler := handlers.NewAIHandler(store, aiService, Logger())
 
 	tests := []struct {
 		name           string
@@ -264,11 +264,11 @@ func TestAIHandler_ServeHTTP_Health(t *testing.T) {
 
 	// Setup test dependencies
 	store := storage.NewMemoryStore()
-	aiService, err := ai.NewService(ctx, modelName, "http://localhost:11434")
+	aiService, err := ai.NewService(ctx, modelName, "http://localhost:11434", Logger())
 	if err != nil || aiService == nil {
 		t.Fatalf("Failed to create AI service: %v", err)
 	}
-	handler := handlers.NewAIHandler(store, aiService)
+	handler := handlers.NewAIHandler(store, aiService, Logger())
 
 	tests := []struct {
 		name           string
@@ -353,11 +353,11 @@ func TestAIHandler_ServeHTTP_UnknownRoutes(t *testing.T) {
 
 	// Setup test dependencies
 	store := storage.NewMemoryStore()
-	aiService, err := ai.NewService(ctx, modelName, "http://localhost:11434")
+	aiService, err := ai.NewService(ctx, modelName, "http://localhost:11434", Logger())
 	if err != nil || aiService == nil {
 		t.Fatalf("Failed to create AI service: %v", err)
 	}
-	handler := handlers.NewAIHandler(store, aiService)
+	handler := handlers.NewAIHandler(store, aiService, Logger())
 
 	tests := []struct {
 		name           string
@@ -419,11 +419,11 @@ func TestAIHandler_ServeHTTP_MalformedJSON(t *testing.T) {
 
 	// Setup test dependencies
 	store := storage.NewMemoryStore()
-	aiService, err := ai.NewService(ctx, modelName, "http://localhost:11434")
+	aiService, err := ai.NewService(ctx, modelName, "http://localhost:11434", Logger())
 	if err != nil || aiService == nil {
 		t.Fatalf("Failed to create AI service: %v", err)
 	}
-	handler := handlers.NewAIHandler(store, aiService)
+	handler := handlers.NewAIHandler(store, aiService, Logger())
 
 	tests := []struct {
 		name        string
@@ -487,11 +487,11 @@ func BenchmarkAIHandler_ServeHTTP_AnalyzeSentiment(b *testing.B) {
 
 	// Setup test dependencies
 	store := storage.NewMemoryStore()
-	aiService, err := ai.NewService(ctx, modelName, "http://localhost:11434")
+	aiService, err := ai.NewService(ctx, modelName, "http://localhost:11434", Logger())
 	if err != nil || aiService == nil {
 		b.Fatalf("Failed to create AI service: %v", err)
 	}
-	handler := handlers.NewAIHandler(store, aiService)
+	handler := handlers.NewAIHandler(store, aiService, Logger())
 
 	// Create test journal
 	journal := &models.Journal{
@@ -523,11 +523,11 @@ func BenchmarkAIHandler_ServeHTTP_Health(b *testing.B) {
 
 	// Setup test dependencies
 	store := storage.NewMemoryStore()
-	aiService, err := ai.NewService(ctx, modelName, "http://localhost:11434")
+	aiService, err := ai.NewService(ctx, modelName, "http://localhost:11434", Logger())
 	if err != nil || aiService == nil {
 		b.Fatalf("Failed to create AI service: %v", err)
 	}
-	handler := handlers.NewAIHandler(store, aiService)
+	handler := handlers.NewAIHandler(store, aiService, Logger())
 
 	// Create request
 	req, _ := http.NewRequest("GET", "/ai/health", nil)

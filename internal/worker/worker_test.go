@@ -1,4 +1,4 @@
-package worker
+package worker_test
 
 import (
 	"context"
@@ -6,7 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/garnizeh/englog/internal/logging"
 	"github.com/garnizeh/englog/internal/models"
+	"github.com/garnizeh/englog/internal/worker"
 	"github.com/google/uuid"
 )
 
@@ -55,7 +57,7 @@ func TestInMemoryWorker_ProcessJournal_Success(t *testing.T) {
 			ProcessedAt: time.Now(),
 		},
 	}
-	worker := NewInMemoryWorker(mockAI)
+	worker := worker.NewInMemoryWorker(mockAI, logger())
 
 	journal := &models.Journal{
 		ID:      uuid.New().String(),
@@ -100,7 +102,7 @@ func TestInMemoryWorker_ProcessJournal_Failure(t *testing.T) {
 	mockAI := &mockAIProcessor{
 		shouldFail: true,
 	}
-	worker := NewInMemoryWorker(mockAI)
+	worker := worker.NewInMemoryWorker(mockAI, logger())
 
 	journal := &models.Journal{
 		ID:      uuid.New().String(),
@@ -137,7 +139,7 @@ func TestInMemoryWorker_ProcessJournal_Timeout(t *testing.T) {
 	mockAI := &mockAIProcessor{
 		delay: 20 * time.Second, // Longer than the 15-second timeout
 	}
-	worker := NewInMemoryWorker(mockAI)
+	worker := worker.NewInMemoryWorker(mockAI, logger())
 
 	journal := &models.Journal{
 		ID:      uuid.New().String(),
@@ -171,7 +173,7 @@ func TestInMemoryWorker_ProcessJournal_Timeout(t *testing.T) {
 func TestInMemoryWorker_ProcessJournal_NilJournal(t *testing.T) {
 	// Arrange
 	mockAI := &mockAIProcessor{}
-	worker := NewInMemoryWorker(mockAI)
+	worker := worker.NewInMemoryWorker(mockAI, logger())
 
 	// Act & Assert - should not panic
 	worker.ProcessJournal(context.Background(), nil)
@@ -182,7 +184,7 @@ func TestInMemoryWorker_ProcessJournalWithGracefulFailure(t *testing.T) {
 	mockAI := &mockAIProcessor{
 		shouldFail: true,
 	}
-	worker := NewInMemoryWorker(mockAI)
+	worker := worker.NewInMemoryWorker(mockAI, logger())
 
 	journal := &models.Journal{
 		ID:      uuid.New().String(),
@@ -209,4 +211,13 @@ func TestInMemoryWorker_ProcessJournalWithGracefulFailure(t *testing.T) {
 	if journal.Content == "" {
 		t.Error("Journal content should be preserved")
 	}
+}
+
+func logger() *logging.Logger {
+	logConfig := logging.Config{
+		Level:  logging.DebugLevel,
+		Format: "json",
+	}
+
+	return logging.NewLogger(logConfig)
 }
