@@ -8,31 +8,21 @@ Welcome to **englog**, a project built through a unique collaboration between a 
 
 This repository is a living testament to a new way of building software, where human-AI partnership is at the core of the creative process.
 
-## Current Status: Prototype Phase 0 - FEATURE COMPLETE
+## Current Status: Phase 1 (MVP) - In Progress
 
-We have **successfully completed Phase 0** prototype development with all 9 planned tasks finished. The prototype demonstrates a fully functional AI-powered journaling system with comprehensive testing and documentation.
+We have **successfully completed Phase 0** and are now beginning the **MVP development phase**. The goal is to build a production-ready version of EngLog, evolving from a prototype to a scalable, feature-rich application. The complete backlog for this phase is defined in [`/docs/planning/backlog/MVP-PHASE1-README.md`](./docs/planning/backlog/MVP-PHASE1-README.md).
 
-### Completed Prototypes:
+### Phase 1 (MVP) Goals:
 
-- ✅ **PROTOTYPE-001:** Basic API structure and health endpoints
-- ✅ **PROTOTYPE-002:** Journal CRUD operations with in-memory storage
-- ✅ **PROTOTYPE-003:** Ollama AI integration for sentiment analysis and journal generation
-- ✅ **PROTOTYPE-004:** Synchronous AI processing with graceful failure handling
-- ✅ **PROTOTYPE-005:** JSON schema design and data validation
-- ✅ **PROTOTYPE-006:** Structured logging and request debugging
-- ✅ **PROTOTYPE-007:** Docker development environment setup
-- ✅ **PROTOTYPE-008:** Manual testing documentation and API examples
-- ✅ **PROTOTYPE-009:** Health and status monitoring endpoints
+The primary goal of the MVP phase is to build a production-ready application with a solid foundation for future growth. Key deliverables include:
 
-### Current Features (Prototype Phase 0 Complete):
+- **Database Integration:** Migrating from in-memory storage to a persistent PostgreSQL database.
+- **User Authentication:** Implementing a secure authentication system using JWT, OAuth 2.0, and email-based OTP.
+- **Asynchronous AI Processing:** Evolving the AI worker into a distributed, asynchronous pool for scalability.
+- **Web Application:** Building a lightweight vanilla JavaScript SPA for user interaction.
+- **Production-Ready Infrastructure:** Setting up a robust deployment pipeline using Docker and preparing for Kubernetes.
 
-- **Complete AI Processing Pipeline:** Journal entries are automatically analyzed for sentiment, themes, and insights
-- **Synchronous Processing:** AI analysis completes before API response is returned with graceful failure handling
-- **Comprehensive Monitoring:** Health checks, system status, and Ollama connectivity monitoring
-- **Docker Development Environment:** Full containerized setup with hot-reload and automated scripts
-- **Extensive Testing Documentation:** 20+ use cases with Bruno collection and curl examples
-- **Structured Logging:** Production-ready JSON logging with request tracing and performance metrics
-- **Flexible Data Models:** JSON schema validation with extensible metadata support
+For a detailed breakdown of all tasks, see the [MVP Backlog](./docs/planning/backlog/MVP-PHASE1-README.md).
 
 ## Core Components
 
@@ -104,7 +94,7 @@ Complete API surface (Phase 0 - All Prototypes):
 
 ### Prerequisites
 
-- Go 1.21 or later
+- Go 1.24.5 or later
 - Ollama installed and running locally
 - A compatible Ollama model (e.g., `deepseek-r1:1.5b`)
 
